@@ -29,7 +29,6 @@ class CheckpointManager:
         if step in self.save_steps:
             path = self.out_dir / f"ckpt_step_{step:06d}.pt"
             torch.save(payload, path)
-            print(f"[ckpt] saved {path}")
             return path
         return None
 
@@ -90,12 +89,22 @@ class Trainer:
         return loss.item(), acc, lr
 
     def train(self) -> Path | None:
+        from tqdm.auto import tqdm
+
+        from procedural_warmup.analysis.figures import plot_warmup_curves
+
         self.model.train()
         self.mlm_head.train()
         loss_m, acc_m = AverageMeter(), AverageMeter()
         last_ckpt: Path | None = None
         it = iter(self.loader)
-        for step in range(1, self.cfg.training.steps + 1):
+        progress = self.cfg.logging.progress
+        figure_every = self.cfg.logging.figure_every
+        pbar = tqdm(
+            range(1, self.cfg.training.steps + 1),
+            disable=not progress, dynamic_ncols=True, desc=f"warmup:{self.cfg.run_name}",
+        )
+        for step in pbar:
             try:
                 batch = next(it)
             except StopIteration:
@@ -109,14 +118,19 @@ class Trainer:
             acc_m.update(acc)
 
             if step % self.cfg.logging.print_freq == 0:
-                self.run_dir.log_row(
-                    {"step": step, "loss": loss, "acc": acc, "lr": lr}
-                )
-                print(
-                    f"step {step:06d} | loss {loss:.4f} | acc {acc:.3f} | lr {lr:.2e}"
-                )
+                self.run_dir.log_row({"step": step, "loss": loss, "acc": acc, "lr": lr})
+                if progress:
+                    pbar.set_postfix(loss=f"{loss:.3f}", acc=f"{acc:.3f}", lr=f"{lr:.1e}")
+                else:
+                    print(f"step {step:06d} | loss {loss:.4f} | acc {acc:.3f} | lr {lr:.2e}")
                 if self.logger is not None:
                     self.logger.log(step, loss, acc, lr)
+
+            # Refresh the live training-curve figure so progress is visible mid-run.
+            if figure_every > 0 and step % figure_every == 0:
+                plot_warmup_curves(
+                    self.cfg.results_dir, self.cfg.run_name, self.run_dir.figures_dir
+                )
 
             ckpt = self.ckpts.maybe_save(
                 step,
@@ -127,8 +141,11 @@ class Trainer:
                     "optimizer_state": self.opt.state_dict(),
                 },
             )
+            if ckpt is not None:
+                (tqdm.write if progress else print)(f"[ckpt] saved {ckpt}")
             last_ckpt = ckpt or last_ckpt
 
+        pbar.close()
         self._finalize(loss_m.avg, acc_m.avg, last_ckpt)
         return last_ckpt
 

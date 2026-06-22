@@ -7,7 +7,8 @@ from timm.utils import accuracy
 
 
 def train_one_epoch(model, loader, optimizer, criterion, device, *,
-                    mixup_fn=None, scaler=None, use_amp=False, clip_grad=1.0) -> float:
+                    mixup_fn=None, scaler=None, use_amp=False, clip_grad=1.0,
+                    progress=False, desc="train") -> float:
     model.train()
     device_type = device.type
     # Accumulate on-GPU and sync once per epoch — avoids a host<->device stall every step,
@@ -15,7 +16,11 @@ def train_one_epoch(model, loader, optimizer, criterion, device, *,
     # model). The CPU can race ahead queuing batches so the GPU stays fed.
     loss_sum = torch.zeros((), device=device)
     n_total = 0
-    for samples, targets in loader:
+    pbar = None
+    if progress:
+        from tqdm.auto import tqdm
+        pbar = tqdm(total=len(loader), dynamic_ncols=True, desc=desc, leave=False)
+    for step, (samples, targets) in enumerate(loader):
         samples = samples.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
         if mixup_fn is not None:
@@ -42,6 +47,12 @@ def train_one_epoch(model, loader, optimizer, criterion, device, *,
         bs = samples.size(0)
         loss_sum += loss.detach() * bs
         n_total += bs
+        if pbar is not None:
+            pbar.update(1)
+            if (step + 1) % 50 == 0:  # cheap periodic sync for the live loss readout
+                pbar.set_postfix(loss=f"{(loss_sum / max(n_total, 1)).item():.3f}")
+    if pbar is not None:
+        pbar.close()
     return (loss_sum / max(n_total, 1)).item()
 
 

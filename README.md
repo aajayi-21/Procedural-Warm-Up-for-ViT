@@ -91,6 +91,23 @@ Every major step and experimental run writes to `results/reports/<run>/`: the fr
 figures under `results/figures/`. All figures are produced in code and regenerable from
 saved results.
 
+## Monitoring progress
+
+Training shows live **tqdm progress bars** (ETA + running loss/accuracy) for both the
+warm-up step loop and the downstream epoch/batch loops. The training-curve figure under
+`results/figures/` also **refreshes during the run** (warm-up: every `logging.figure_every`
+steps; downstream: every eval), so an open PNG stays current. Set `logging.progress: false`
+for plain line logs (CI / redirected output).
+
+From a second terminal (or over SSH on the GPU box), watch any in-flight run — a text
+dashboard with ASCII sparklines that needs no GUI:
+
+```bash
+python -m procedural_warmup.analysis.watch ca-rule110 --live          # warm-up run
+python -m procedural_warmup.analysis.watch cifar100-rule110 --live    # downstream run
+python -m procedural_warmup.analysis.watch ca-rule110 --figure        # regenerate the PNG now
+```
+
 ## Testing
 
 ```bash

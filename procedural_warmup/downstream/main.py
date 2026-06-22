@@ -75,15 +75,23 @@ def run(cfg) -> dict:
     use_amp = cfg.train.use_amp and device.type == "cuda"
     scaler = torch.amp.GradScaler(device=device.type, enabled=use_amp)
 
+    from tqdm.auto import tqdm
+
+    from procedural_warmup.analysis.figures import plot_downstream_curve
+
+    progress = cfg.logging.progress
     best_top1 = 0.0
     val = {"top1": 0.0, "top5": 0.0, "loss": float("nan")}
-    for epoch in range(cfg.train.epochs):
+    epoch_bar = tqdm(range(cfg.train.epochs), disable=not progress, dynamic_ncols=True,
+                     desc=f"train:{cfg.run_name}")
+    for epoch in epoch_bar:
         scheduler.step(epoch)
         lr = optimizer.param_groups[0]["lr"]
         train_loss = train_one_epoch(
             model, train_loader, optimizer, criterion, device,
             mixup_fn=mixup_fn, scaler=scaler, use_amp=use_amp,
             clip_grad=cfg.train.clip_grad,
+            progress=progress, desc=f"epoch {epoch}/{cfg.train.epochs}",
         )
         do_eval = ((epoch + 1) % cfg.train.eval_interval == 0
                    or epoch == cfg.train.epochs - 1)
@@ -94,12 +102,18 @@ def run(cfg) -> dict:
                 "epoch": epoch, "lr": lr, "train_loss": train_loss,
                 "val_top1": val["top1"], "val_top5": val["top5"], "val_loss": val["loss"],
             })
-            print(
-                f"epoch {epoch:03d} | lr {lr:.2e} | train_loss {train_loss:.4f} | "
-                f"top1 {val['top1']:.2f} | top5 {val['top5']:.2f} | best {best_top1:.2f}"
-            )
-        else:
+            # Refresh the live downstream curve so progress is visible mid-run.
+            plot_downstream_curve(cfg.results_dir, cfg.run_name, run_dir.figures_dir)
+            msg = (f"epoch {epoch:03d} | lr {lr:.2e} | train_loss {train_loss:.4f} | "
+                   f"top1 {val['top1']:.2f} | top5 {val['top5']:.2f} | best {best_top1:.2f}")
+            if progress:
+                epoch_bar.set_postfix(top1=f"{val['top1']:.2f}", best=f"{best_top1:.2f}")
+                tqdm.write(msg)
+            else:
+                print(msg)
+        elif not progress:
             print(f"epoch {epoch:03d} | lr {lr:.2e} | train_loss {train_loss:.4f}")
+    epoch_bar.close()
 
     metrics = {
         "run_name": cfg.run_name,

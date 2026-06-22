@@ -148,6 +148,8 @@ class WandbConfig:
 @dataclass
 class LoggingConfig:
     print_freq: int = 50
+    progress: bool = True  # live tqdm progress bars (set False for plain logs in CI/files)
+    figure_every: int = 1000  # warm-up: refresh the live training-curve figure every N steps
 
 
 @dataclass
