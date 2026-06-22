@@ -119,6 +119,7 @@ def run(cfg) -> dict:
         "run_name": cfg.run_name,
         "dataset": cfg.data.dataset,
         "init_checkpoint": cfg.init_checkpoint,
+        "train_fraction": cfg.data.train_fraction,
         "epochs": cfg.train.epochs,
         "best_top1": best_top1,
         "final_top1": val["top1"],

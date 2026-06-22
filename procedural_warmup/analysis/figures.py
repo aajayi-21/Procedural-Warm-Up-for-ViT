@@ -167,6 +167,78 @@ def plot_downstream_comparison(
 
 
 # --------------------------------------------------------------------------------------
+# Additive comparison (warm-up methods at full data) + substitutive (data-efficiency)
+# --------------------------------------------------------------------------------------
+
+
+def plot_additive_comparison(rows: list[dict], out_dir, dataset: str,
+                             baseline_method: str = "random",
+                             filename: str = "additive_comparison.png") -> Path:
+    """Bar chart of best top-1 by warm-up method at full data, vs the random baseline.
+
+    ``rows`` items: ``{"method": str, "best_top1": float}``. The baseline method's accuracy
+    is drawn as a horizontal line and each bar is annotated with its delta over it.
+    """
+    rows = sorted(rows, key=lambda r: r["best_top1"])
+    methods = [r["method"] for r in rows]
+    vals = [r["best_top1"] for r in rows]
+    base = next((r["best_top1"] for r in rows if r["method"] == baseline_method), None)
+
+    fig, ax = plt.subplots(figsize=(1.5 * len(rows) + 1.5, 4.5))
+    colors = ["tab:gray" if m == baseline_method else "tab:green" for m in methods]
+    bars = ax.bar(methods, vals, color=colors)
+    if base is not None:
+        ax.axhline(base, color="tab:red", linestyle="--", linewidth=1,
+                   label=f"{baseline_method} ({base:.2f})")
+        ax.legend(fontsize=8)
+    for bar, v in zip(bars, vals):
+        delta = f"\nΔ{v - base:+.2f}" if base is not None and v != base else ""
+        ax.text(bar.get_x() + bar.get_width() / 2, v, f"{v:.2f}{delta}",
+                ha="center", va="bottom", fontsize=8)
+    ax.set_ylabel("best top-1 (%)")
+    ax.set_title(f"Additive comparison — {dataset} (full data)")
+    ax.set_ylim(0, max(vals) * 1.12)
+    fig.tight_layout()
+    out = _ensure(out_dir) / filename
+    fig.savefig(out, dpi=130)
+    plt.close(fig)
+    return out
+
+
+def plot_substitutive_curves(rows: list[dict], out_dir, dataset: str,
+                             baseline_top1: float | None, train_size: int,
+                             filename: str = "substitutive_curves.png") -> Path:
+    """Data-efficiency curves: best top-1 vs fraction of training images, per method.
+
+    ``rows`` items: ``{"method": str, "fraction": float, "best_top1": float}``. The
+    ``baseline_top1`` (random init at full data) is drawn as a horizontal target line; where
+    a warm-up curve crosses it marks the data it can save.
+    """
+    by_method: dict[str, list[tuple[float, float]]] = {}
+    for r in rows:
+        by_method.setdefault(r["method"], []).append((r["fraction"], r["best_top1"]))
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    for method, pts in sorted(by_method.items()):
+        pts = sorted(pts)
+        xs = [f * 100 for f, _ in pts]
+        ys = [v for _, v in pts]
+        ax.plot(xs, ys, marker="o", label=method)
+    if baseline_top1 is not None:
+        ax.axhline(baseline_top1, color="tab:red", linestyle="--", linewidth=1,
+                   label=f"random @100% ({baseline_top1:.2f})")
+    ax.set_xlabel(f"% of {dataset} training images  (100% = {train_size:,})")
+    ax.set_ylabel("best top-1 (%)")
+    ax.set_title(f"Substitutive (data-efficiency) — {dataset}")
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    out = _ensure(out_dir) / filename
+    fig.savefig(out, dpi=130)
+    plt.close(fig)
+    return out
+
+
+# --------------------------------------------------------------------------------------
 # Rule-complexity sweep (edge-of-chaos) — scaffold, used once the sweep is run
 # --------------------------------------------------------------------------------------
 

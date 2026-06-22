@@ -1,0 +1,30 @@
+# Complete pretraining-method comparison: additive + substitutive (data-efficiency).
+#
+# Additive  = every method warmed up, then trained on the FULL dataset (gain over random).
+# Substitutive = selected methods trained on FRACTIONS of the data (how much data the
+#                warm-up makes up for vs random@100%).
+#
+# Resumable: finished warm-ups (stripped ckpt present) and downstream runs (metrics.json
+# present) are skipped. Preview with `--dry-run`. Heavy: 4 additive + (4 x 2) substitutive
+# = 12 runs at 300 epochs on CIFAR-100 — run on a CUDA box, incrementally.
+
+results_dir: results
+dataset: CIFAR100          # CIFAR10 | CIFAR100
+epochs: 300
+seed: 42
+downstream_config: procedural_warmup/config/files/downstream-cifar.yaml
+
+warmup_configs:
+  ca: procedural_warmup/config/files/ca-rule110.yaml
+  dyck: procedural_warmup/config/files/dyck-vit-t.yaml
+  dyck_shuffle: procedural_warmup/config/files/dyck-shuffle.yaml
+
+methods:                   # display name -> warm-up key, or "none" for random init
+  random: none
+  ca: ca
+  dyck: dyck
+  dyck_shuffle: dyck_shuffle
+
+substitutive:
+  methods: [random, ca, dyck, dyck_shuffle]
+  fractions: [0.25, 0.5]   # up to 50%; the 100% point comes from the additive runs

@@ -1,0 +1,77 @@
+{
+  "dataset": "CIFAR100",
+  "runs": [
+    {
+      "run_name": "cifar100-random-f100",
+      "method": "random",
+      "fraction": 1.0,
+      "dataset": "CIFAR100"
+    },
+    {
+      "run_name": "cifar100-ca-f100",
+      "method": "ca",
+      "fraction": 1.0,
+      "dataset": "CIFAR100"
+    },
+    {
+      "run_name": "cifar100-dyck-f100",
+      "method": "dyck",
+      "fraction": 1.0,
+      "dataset": "CIFAR100"
+    },
+    {
+      "run_name": "cifar100-dyck_shuffle-f100",
+      "method": "dyck_shuffle",
+      "fraction": 1.0,
+      "dataset": "CIFAR100"
+    },
+    {
+      "run_name": "cifar100-random-f25",
+      "method": "random",
+      "fraction": 0.25,
+      "dataset": "CIFAR100"
+    },
+    {
+      "run_name": "cifar100-random-f50",
+      "method": "random",
+      "fraction": 0.5,
+      "dataset": "CIFAR100"
+    },
+    {
+      "run_name": "cifar100-ca-f25",
+      "method": "ca",
+      "fraction": 0.25,
+      "dataset": "CIFAR100"
+    },
+    {
+      "run_name": "cifar100-ca-f50",
+      "method": "ca",
+      "fraction": 0.5,
+      "dataset": "CIFAR100"
+    },
+    {
+      "run_name": "cifar100-dyck-f25",
+      "method": "dyck",
+      "fraction": 0.25,
+      "dataset": "CIFAR100"
+    },
+    {
+      "run_name": "cifar100-dyck-f50",
+      "method": "dyck",
+      "fraction": 0.5,
+      "dataset": "CIFAR100"
+    },
+    {
+      "run_name": "cifar100-dyck_shuffle-f25",
+      "method": "dyck_shuffle",
+      "fraction": 0.25,
+      "dataset": "CIFAR100"
+    },
+    {
+      "run_name": "cifar100-dyck_shuffle-f50",
+      "method": "dyck_shuffle",
+      "fraction": 0.5,
+      "dataset": "CIFAR100"
+    }
+  ]
+}

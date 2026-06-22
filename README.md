@@ -56,13 +56,14 @@ are the weights carried into image training; the embeddings and MLM head are dis
 ```
 procedural_warmup/
   config/      dataclass schema + YAML configs (config/files/*.yaml)
-  data/        source registry; data/dyck (grammar) and data/ca (ECA + Game of Life)
+  data/        source registry; grammars (dyck, dyck_shuffle, ww) + ca (ECA + Game of Life)
   model/       frozen embeddings, ProceduralViT wrapper, model factory
   warmup/      step-based trainer, optim, checkpoint stripping, curriculum scaffold
   downstream/  timm-based CIFAR trainer, weight transfer, engine
-  analysis/    figures, Lempel-Ziv complexity, layerwise probe, report CLIs
+  analysis/    figures, Lempel-Ziv complexity, layerwise probe, comparison + report CLIs
+  experiments/ multi-run drivers (comparison.py: additive + substitutive)
 tests/         pytest unit + smoke tests
-scripts/       run_warmup.sh, run_downstream.sh, run_focused_experiment.sh
+scripts/       run_warmup.sh, run_downstream.sh, run_focused_experiment.sh, run_comparison.sh
 results/       figures/ and reports/<run>/ (config, log.csv, metrics.json, report.md)
 docs/          the paper, research notes, and the CA design doc
 ```
@@ -90,6 +91,29 @@ Every major step and experimental run writes to `results/reports/<run>/`: the fr
 `config.yaml`, a streaming `log.csv`, a `metrics.json`, and a markdown `report.md` linking
 figures under `results/figures/`. All figures are produced in code and regenerable from
 saved results.
+
+## Complete method comparison (additive + substitutive)
+
+Reproduces the paper's two analyses across all warm-up methods (random / CA / k-Dyck /
+k-Dyck-Shuffle), training on the **real** dataset after each warm-up:
+
+- **Additive** — every method warmed up then trained on the *full* dataset; the gain over
+  random init is the additive benefit (paper Table 2/4).
+- **Substitutive** — methods trained on *fractions* of the images; how much data each
+  warm-up makes up for vs random-init at full data (paper Fig 3, "X% fewer images").
+
+```bash
+python -m procedural_warmup.experiments.comparison \
+  --config procedural_warmup/config/files/comparison.yaml --dry-run   # preview the matrix
+bash scripts/run_comparison.sh                                        # run it (resumable)
+```
+
+The driver runs each warm-up (skipping cached ones), trains every (method × data-fraction)
+run on real CIFAR (skipping finished ones — fully resumable), then writes
+`results/reports/comparison/report.md` with an **additive** table + bar chart, a
+**substitutive** table + data-efficiency curves, and the per-method "data saved" estimate.
+Edit `comparison.yaml` to change methods, fractions, dataset, or epochs. Rebuild just the
+report from finished runs with `--only-report`.
 
 ## Monitoring progress
 

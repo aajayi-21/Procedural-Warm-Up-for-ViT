@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 
+import numpy as np
 import torch
 from timm.data import Mixup, create_transform
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
@@ -69,10 +70,34 @@ def resolve_num_workers(cfg) -> int:
     return nw
 
 
+def stratified_subset(dataset, fraction: float, seed: int):
+    """Return a class-balanced ``Subset`` keeping ``fraction`` of each class.
+
+    Used for the substitutive (data-efficiency) sweep — training on a fraction of the real
+    images and measuring how much the warm-up makes up for the missing data.
+    """
+    targets = np.asarray(getattr(dataset, "targets"))
+    rng = np.random.default_rng(seed)
+    keep: list[int] = []
+    for cls in np.unique(targets):
+        idx = np.where(targets == cls)[0]
+        rng.shuffle(idx)
+        k = max(1, int(round(len(idx) * fraction)))
+        keep.extend(idx[:k].tolist())
+    rng.shuffle(keep)
+    return torch.utils.data.Subset(dataset, keep)
+
+
 def build_loaders(cfg):
     """Return ``(train_loader, val_loader, n_classes, mixup_fn)``."""
     train_ds, n = build_dataset(cfg, is_train=True)
     val_ds, _ = build_dataset(cfg, is_train=False)
+
+    frac = cfg.data.train_fraction
+    if frac < 1.0:
+        full = len(train_ds)
+        train_ds = stratified_subset(train_ds, frac, cfg.seed)
+        print(f"[data] train_fraction={frac} -> {len(train_ds)}/{full} images")
 
     nw = resolve_num_workers(cfg)
     # persistent_workers avoids re-spawning workers each epoch (default prefetch is fine;

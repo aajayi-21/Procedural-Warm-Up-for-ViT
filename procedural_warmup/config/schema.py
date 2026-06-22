@@ -49,12 +49,19 @@ class VocabConfig:
 
 @dataclass
 class DyckConfig:
-    """k-Dyck grammar generator (reference parity baseline)."""
+    """k-Dyck grammar generator (shared by ``dyck`` and ``dyck_shuffle`` sources)."""
 
     k_open: int = 64
     k_close: int = 64
     open_prob: float = 0.6
     min_pairs: int = 1
+
+
+@dataclass
+class WWConfig:
+    """WW regular-language generator (a random substring concatenated with its copy)."""
+
+    n_symbols: int = 64  # alphabet size; vocab.K must be >= 2 + n_symbols
 
 
 @dataclass
@@ -179,6 +186,7 @@ class RootConfig:
     vocab: VocabConfig = field(default_factory=VocabConfig)
     data: DataConfig = field(default_factory=DataConfig)
     dyck: DyckConfig = field(default_factory=DyckConfig)
+    ww: WWConfig = field(default_factory=WWConfig)
     ca: CAConfig = field(default_factory=CAConfig)
     masking: MaskingConfig = field(default_factory=MaskingConfig)
     dataset: DatasetConfig = field(default_factory=DatasetConfig)
@@ -215,6 +223,7 @@ class DownstreamDataConfig:
     data_root: str = "data"
     input_size: int = 224  # resize so the 14x14 patch grid matches the warm-up geometry
     num_workers: int = 0  # 0 = auto (CPU cores capped at 16)
+    train_fraction: float = 1.0  # use a stratified fraction of the train set (substitutive sweep)
 
 
 @dataclass
