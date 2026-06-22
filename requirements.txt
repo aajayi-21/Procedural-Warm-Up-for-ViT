@@ -1,0 +1,26 @@
+# Procedural Warm-Up for ViTs — Cellular-Automata extension.
+# Pinned per CLAUDE.md. Install into a venv: `pip install -r requirements.txt`.
+#
+# NOTE on CUDA: torch/torchvision below are the standard PyPI builds. For the target
+# NVIDIA GPUs (5090 / 4080 / A1000) install the matching CUDA wheels first, e.g.:
+#   pip install torch==2.12.1 torchvision==0.27.1 --index-url https://download.pytorch.org/whl/cu130
+# then `pip install -r requirements.txt` for the rest.
+
+# --- Core ML ---
+torch==2.12.1
+torchvision==0.27.1
+timm==1.0.27
+numpy==2.5.0
+
+# --- Config / utils ---
+PyYAML==6.0.3
+tqdm==4.68.3
+
+# --- Figures & reports ---
+matplotlib==3.11.0
+
+# --- Experiment tracking (optional; enabled via config) ---
+wandb==0.27.2
+
+# --- Testing ---
+pytest==9.1.1
