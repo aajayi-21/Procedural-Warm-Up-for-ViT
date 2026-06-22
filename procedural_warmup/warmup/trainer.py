@@ -45,13 +45,20 @@ class Trainer:
         self.run_dir = run_dir
         self.logger = logger
 
+        if self.device.type == "cuda":
+            torch.set_float32_matmul_precision("high")  # TF32 matmuls for attention/MLP
+        loader_kwargs = {
+            "num_workers": cfg.dataset.num_workers,
+            "pin_memory": cfg.dataset.pin_memory,
+        }
+        if cfg.dataset.num_workers > 0:
+            loader_kwargs["persistent_workers"] = True  # CA generation runs on the workers
         self.loader = DataLoader(
             dataset,
             batch_size=cfg.dataset.batch_size,
             shuffle=True,
-            num_workers=cfg.dataset.num_workers,
-            pin_memory=cfg.dataset.pin_memory,
             drop_last=True,
+            **loader_kwargs,
         )
         params = [
             {"params": [p for p in self.model.parameters() if p.requires_grad]},

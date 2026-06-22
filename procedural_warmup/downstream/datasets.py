@@ -7,6 +7,8 @@ Mixup/CutMix; evaluation uses a deterministic resize/normalize.
 
 from __future__ import annotations
 
+import os
+
 import torch
 from timm.data import Mixup, create_transform
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
@@ -55,25 +57,37 @@ def build_dataset(cfg, is_train: bool):
     return ds, n
 
 
+def resolve_num_workers(cfg) -> int:
+    """``num_workers <= 0`` means auto = CPU cores capped at 16.
+
+    The input pipeline (resize 32->224 + RandAugment) is the bottleneck for a tiny model,
+    so more workers raises throughput; the cap bounds RAM held by in-flight 224px batches.
+    """
+    nw = cfg.data.num_workers
+    if nw is None or nw <= 0:
+        return min(os.cpu_count() or 0, 16)
+    return nw
+
+
 def build_loaders(cfg):
     """Return ``(train_loader, val_loader, n_classes, mixup_fn)``."""
     train_ds, n = build_dataset(cfg, is_train=True)
     val_ds, _ = build_dataset(cfg, is_train=False)
 
+    nw = resolve_num_workers(cfg)
+    # persistent_workers avoids re-spawning workers each epoch (default prefetch is fine;
+    # raising it multiplies RAM held by in-flight upscaled batches).
+    loader_kwargs: dict = {"num_workers": nw, "pin_memory": True}
+    if nw > 0:
+        loader_kwargs["persistent_workers"] = True
+    print(f"[data] DataLoader workers={nw}")
+
     train_loader = torch.utils.data.DataLoader(
-        train_ds,
-        batch_size=cfg.train.batch_size,
-        shuffle=True,
-        num_workers=cfg.data.num_workers,
-        pin_memory=True,
-        drop_last=True,
+        train_ds, batch_size=cfg.train.batch_size, shuffle=True, drop_last=True,
+        **loader_kwargs,
     )
     val_loader = torch.utils.data.DataLoader(
-        val_ds,
-        batch_size=cfg.train.batch_size,
-        shuffle=False,
-        num_workers=cfg.data.num_workers,
-        pin_memory=True,
+        val_ds, batch_size=cfg.train.batch_size, shuffle=False, **loader_kwargs,
     )
 
     mixup_fn = None

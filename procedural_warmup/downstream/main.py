@@ -36,6 +36,15 @@ def build_criterion(cfg, mixup_fn):
 def run(cfg) -> dict:
     set_seed(cfg.seed)
     device = resolve_device(cfg.train.device)
+    if device.type == "cuda":
+        # Fixed input size -> let cuDNN pick the fastest kernels; enable TF32 matmuls.
+        torch.backends.cudnn.benchmark = True
+        torch.set_float32_matmul_precision("high")
+        print(f"[device] training on GPU: {torch.cuda.get_device_name(device)} "
+              f"(AMP={cfg.train.use_amp})")
+    else:
+        print("[device] WARNING: training on CPU — the GPU is NOT in use. "
+              "Check `torch.cuda.is_available()` and your CUDA/torch install.")
     run_dir = RunDir.create(cfg.results_dir, cfg.run_name)
     run_dir.save_config(config_to_dict(cfg))
 
@@ -67,6 +76,7 @@ def run(cfg) -> dict:
     scaler = torch.amp.GradScaler(device=device.type, enabled=use_amp)
 
     best_top1 = 0.0
+    val = {"top1": 0.0, "top5": 0.0, "loss": float("nan")}
     for epoch in range(cfg.train.epochs):
         scheduler.step(epoch)
         lr = optimizer.param_groups[0]["lr"]
@@ -75,16 +85,21 @@ def run(cfg) -> dict:
             mixup_fn=mixup_fn, scaler=scaler, use_amp=use_amp,
             clip_grad=cfg.train.clip_grad,
         )
-        val = evaluate(model, val_loader, device, use_amp=use_amp)
-        best_top1 = max(best_top1, val["top1"])
-        run_dir.log_row({
-            "epoch": epoch, "lr": lr, "train_loss": train_loss,
-            "val_top1": val["top1"], "val_top5": val["top5"], "val_loss": val["loss"],
-        })
-        print(
-            f"epoch {epoch:03d} | lr {lr:.2e} | train_loss {train_loss:.4f} | "
-            f"top1 {val['top1']:.2f} | top5 {val['top5']:.2f} | best {best_top1:.2f}"
-        )
+        do_eval = ((epoch + 1) % cfg.train.eval_interval == 0
+                   or epoch == cfg.train.epochs - 1)
+        if do_eval:
+            val = evaluate(model, val_loader, device, use_amp=use_amp)
+            best_top1 = max(best_top1, val["top1"])
+            run_dir.log_row({
+                "epoch": epoch, "lr": lr, "train_loss": train_loss,
+                "val_top1": val["top1"], "val_top5": val["top5"], "val_loss": val["loss"],
+            })
+            print(
+                f"epoch {epoch:03d} | lr {lr:.2e} | train_loss {train_loss:.4f} | "
+                f"top1 {val['top1']:.2f} | top5 {val['top5']:.2f} | best {best_top1:.2f}"
+            )
+        else:
+            print(f"epoch {epoch:03d} | lr {lr:.2e} | train_loss {train_loss:.4f}")
 
     metrics = {
         "run_name": cfg.run_name,

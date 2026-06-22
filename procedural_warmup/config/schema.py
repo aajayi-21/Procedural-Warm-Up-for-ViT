@@ -212,7 +212,7 @@ class DownstreamDataConfig:
     dataset: str = "CIFAR100"  # "CIFAR10" | "CIFAR100"
     data_root: str = "data"
     input_size: int = 224  # resize so the 14x14 patch grid matches the warm-up geometry
-    num_workers: int = 8
+    num_workers: int = 0  # 0 = auto (CPU cores capped at 16)
 
 
 @dataclass
@@ -237,6 +237,7 @@ class DownstreamTrainConfig:
     clip_grad: float = 1.0
     use_amp: bool = True
     device: str = "cuda"
+    eval_interval: int = 1  # run validation every N epochs (always on the last); raise to save time
 
 
 @dataclass

@@ -11,7 +11,7 @@ data:
   dataset: CIFAR100              # CIFAR10 | CIFAR100
   data_root: data
   input_size: 224               # 14x14 patch grid == warm-up token geometry
-  num_workers: 8
+  num_workers: 0                # 0 = auto (CPU cores capped at 16)
 
 aug:
   color_jitter: 0.3
