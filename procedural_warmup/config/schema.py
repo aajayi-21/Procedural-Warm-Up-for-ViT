@@ -221,7 +221,12 @@ class DownstreamModelConfig:
 class DownstreamDataConfig:
     dataset: str = "CIFAR100"  # "CIFAR10" | "CIFAR100"
     data_root: str = "data"
-    input_size: int = 224  # resize so the 14x14 patch grid matches the warm-up geometry
+    input_size: int = 224  # model input: 14x14 patch grid matches the warm-up geometry
+    # Resolution the CPU pipeline outputs; if < input_size the batch is upscaled on the GPU.
+    # CIFAR is natively 32px, so augmenting at 32 then upscaling on-device avoids resizing
+    # 49x-larger images on CPU and shipping ~300MB batches over PCIe (the downstream
+    # GPU-starvation bottleneck). Set == input_size to do all resizing on the CPU.
+    cpu_size: int = 32
     num_workers: int = 0  # 0 = auto (CPU cores capped at 16)
     train_fraction: float = 1.0  # use a stratified fraction of the train set (substitutive sweep)
 

@@ -10,7 +10,8 @@ model: { name: vit_tiny_patch16_224, drop_path_rate: 0.1 }
 data:
   dataset: CIFAR100              # CIFAR10 | CIFAR100
   data_root: data
-  input_size: 224               # 14x14 patch grid == warm-up token geometry
+  input_size: 224               # model input: 14x14 patch grid == warm-up token geometry
+  cpu_size: 32                  # CPU augments at 32px; GPU upscales to 224 (avoids starvation)
   num_workers: 0                # 0 = auto (CPU cores capped at 16)
 
 aug:

@@ -26,9 +26,11 @@ def num_classes(name: str) -> int:
 
 
 def _build_transform(cfg, is_train: bool):
+    # Augment/resize at cpu_size (cheap); the GPU upscales to input_size in the train loop.
+    size = cfg.data.cpu_size
     if is_train:
         return create_transform(
-            input_size=cfg.data.input_size,
+            input_size=size,
             is_training=True,
             color_jitter=cfg.aug.color_jitter,
             auto_augment=cfg.aug.auto_augment,
@@ -40,7 +42,7 @@ def _build_transform(cfg, is_train: bool):
             std=IMAGENET_DEFAULT_STD,
         )
     return create_transform(
-        input_size=cfg.data.input_size,
+        input_size=size,
         is_training=False,
         interpolation="bicubic",
         crop_pct=1.0,

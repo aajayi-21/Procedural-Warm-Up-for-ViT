@@ -74,6 +74,11 @@ def run(cfg) -> dict:
     criterion = build_criterion(cfg, mixup_fn)
     use_amp = cfg.train.use_amp and device.type == "cuda"
     scaler = torch.amp.GradScaler(device=device.type, enabled=use_amp)
+    # Upscale small CPU-loaded images to the model size on the GPU (keeps H2D transfer tiny).
+    upsample_to = (cfg.data.input_size
+                   if cfg.data.cpu_size < cfg.data.input_size else None)
+    if upsample_to is not None:
+        print(f"[data] CPU pipeline at {cfg.data.cpu_size}px -> GPU upscale to {upsample_to}px")
 
     from tqdm.auto import tqdm
 
@@ -90,13 +95,14 @@ def run(cfg) -> dict:
         train_loss = train_one_epoch(
             model, train_loader, optimizer, criterion, device,
             mixup_fn=mixup_fn, scaler=scaler, use_amp=use_amp,
-            clip_grad=cfg.train.clip_grad,
+            clip_grad=cfg.train.clip_grad, upsample_to=upsample_to,
             progress=progress, desc=f"epoch {epoch}/{cfg.train.epochs}",
         )
         do_eval = ((epoch + 1) % cfg.train.eval_interval == 0
                    or epoch == cfg.train.epochs - 1)
         if do_eval:
-            val = evaluate(model, val_loader, device, use_amp=use_amp)
+            val = evaluate(model, val_loader, device, use_amp=use_amp,
+                           upsample_to=upsample_to)
             best_top1 = max(best_top1, val["top1"])
             run_dir.log_row({
                 "epoch": epoch, "lr": lr, "train_loss": train_loss,
