@@ -122,6 +122,7 @@ class DatasetConfig:
 class TrainingConfig:
     steps: int = 15_000
     device: str = "cuda"  # falls back to cpu automatically if cuda is unavailable
+    use_amp: bool = True  # bf16 autocast on CUDA (throughput; bf16 needs no GradScaler)
 
 
 @dataclass

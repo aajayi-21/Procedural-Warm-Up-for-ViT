@@ -31,7 +31,7 @@ masking:
   mode: random                   # random | forward | lightcone
   mask_ratio: 0.5
 
-dataset: { n_samples: 100000, batch_size: 256, num_workers: 4, pin_memory: true }
+dataset: { n_samples: 100000, batch_size: 256, num_workers: 16, pin_memory: true }  # CA gen is CPU-bound; use more of the 32 cores
 training: { steps: 15000, device: cuda }
 optimizer: { lr: 0.002, weight_decay: 0.05, betas: [0.9, 0.999] }
 scheduler: { enabled: true, warmup_steps: 1000, warmup_start_lr: 1.0e-6, min_lr: 1.0e-5 }

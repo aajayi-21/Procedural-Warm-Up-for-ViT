@@ -46,6 +46,8 @@ class Trainer:
 
         if self.device.type == "cuda":
             torch.set_float32_matmul_precision("high")  # TF32 matmuls for attention/MLP
+        # bf16 autocast only on CUDA; bf16's range means no GradScaler is needed.
+        self.use_amp = getattr(cfg.training, "use_amp", False) and self.device.type == "cuda"
         loader_kwargs = {
             "num_workers": cfg.dataset.num_workers,
             "pin_memory": cfg.dataset.pin_memory,
@@ -70,13 +72,15 @@ class Trainer:
     def _step(self, batch: torch.Tensor):
         batch = batch.to(self.device, non_blocking=True)
         masked_input, target, mask = self.masking(batch)
-        feats = self.model.forward_tokens(masked_input)  # (B, N, d)
-        logits = self.mlm_head(feats)  # (B, N, K)
-        sel_logits = logits[mask]
-        sel_targets = target[mask]
-        if sel_targets.numel() == 0:
-            return None
-        loss = F.cross_entropy(sel_logits, sel_targets)
+        with torch.autocast(device_type=self.device.type, dtype=torch.bfloat16,
+                            enabled=self.use_amp):
+            feats = self.model.forward_tokens(masked_input)  # (B, N, d)
+            logits = self.mlm_head(feats)  # (B, N, K)
+            sel_logits = logits[mask]
+            sel_targets = target[mask]
+            if sel_targets.numel() == 0:
+                return None
+            loss = F.cross_entropy(sel_logits, sel_targets)
 
         self.opt.zero_grad(set_to_none=True)
         loss.backward()
