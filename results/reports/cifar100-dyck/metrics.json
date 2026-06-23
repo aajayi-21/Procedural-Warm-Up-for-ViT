@@ -1,0 +1,23 @@
+{
+  "run_name": "cifar100-dyck",
+  "dataset": "CIFAR100",
+  "init_checkpoint": "checkpoints/dyck-vit-t/ckpt_step_015000_stripped.pt",
+  "train_fraction": 1.0,
+  "epochs": 300,
+  "best_top1": 72.63999938964844,
+  "final_top1": 72.6199951171875,
+  "final_top5": 92.88999938964844,
+  "init_summary": {
+    "loaded": 146,
+    "missing": [
+      "cls_token",
+      "pos_embed",
+      "patch_embed.proj.weight",
+      "patch_embed.proj.bias",
+      "head.weight",
+      "head.bias"
+    ],
+    "unexpected": []
+  },
+  "finished": "2026-06-22T23:32:08Z"
+}

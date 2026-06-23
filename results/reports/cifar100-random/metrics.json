@@ -1,0 +1,12 @@
+{
+  "run_name": "cifar100-random",
+  "dataset": "CIFAR100",
+  "init_checkpoint": null,
+  "train_fraction": 1.0,
+  "epochs": 300,
+  "best_top1": 70.0199966430664,
+  "final_top1": 69.8699951171875,
+  "final_top5": 90.75999450683594,
+  "init_summary": null,
+  "finished": "2026-06-22T22:09:04Z"
+}

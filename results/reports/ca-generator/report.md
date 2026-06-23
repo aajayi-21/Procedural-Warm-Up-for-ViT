@@ -1,6 +1,6 @@
 # Cellular-automata generator validation
 
-_Generated 2026-06-22T17:59:11Z_
+_Generated 2026-06-22T20:33:02Z_
 
 ## Spacetime diagrams
 
