@@ -86,7 +86,8 @@ class CAConfig:
     sim_width: int = 64  # simulated torus width (wider than the window => real light cones)
     burn_in: int = 32  # initial rows discarded to escape transients
     boundary: str = "periodic"  # "periodic" | "zero"
-    init_density: float = 0.5  # Bernoulli probability for the random initial row
+    init_density: float = 0.5  # Bernoulli probability for the random initial cell
+    gol_steps: int = 1  # Game of Life: time gap between the input frame and the target frame
     tokenize: CATokenizeConfig = field(default_factory=CATokenizeConfig)
 
 

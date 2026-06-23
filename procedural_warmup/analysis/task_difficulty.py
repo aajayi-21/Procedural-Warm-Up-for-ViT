@@ -53,6 +53,7 @@ def _variants() -> dict:
     dyck = load_config(f"{_CFG}/dyck-vit-t.yaml")
     dyck_shuffle = load_config(f"{_CFG}/dyck-shuffle.yaml")
     ww = load_config(f"{_CFG}/ww.yaml")
+    gol = load_config(f"{_CFG}/gol.yaml")  # 2-D Game of Life, next-state prediction
     ca = load_config(f"{_CFG}/ca-rule110.yaml")  # binary + random masking (current default)
 
     def tweak(base, **kw):
@@ -68,6 +69,7 @@ def _variants() -> dict:
         "dyck (CF)": dyck,
         "dyck_shuffle (CS)": dyck_shuffle,
         "ww (regular)": ww,
+        "gol (next-state)": gol,
         "ca binary+random": ca,
         "ca binary+forward": tweak(ca, mask_mode="forward"),
         "ca block+random": tweak(ca, tok_mode="block"),

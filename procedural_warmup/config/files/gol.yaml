@@ -1,0 +1,36 @@
+# Procedural warm-up on 2-D Conway's Game of Life (B3/S23) via next-state prediction.
+#
+# The 14x14 token grid holds two stacked 7x14 frames: the top frame is state t (visible),
+# the bottom frame is state t+gol_steps (masked). The model predicts the future frame from
+# the past one, which forces it to apply the Life rule to every cell. On a toroidal frame
+# the target is fully determined and noise-free, so the task is cleanly learnable.
+seed: 42
+run_name: gol
+results_dir: results
+
+model: { name: vit_tiny_patch16_224, embed_dim: 192 }
+grid: { H: 14, W: 14 }                 # two stacked frames -> N = 196 tokens
+vocab: { K: 130, PAD_ID: 0, MASK_ID: 1 }   # 2 specials + 2^7 block symbols
+
+data:
+  source: gol
+
+ca:
+  dim: 2
+  burn_in: 0                           # t = random config (max diversity); evolve to t+1
+  init_density: 0.38                   # active regime (avoids the all-dead degenerate state)
+  gol_steps: 1                         # predict one Life step ahead
+  # Block tokenization: each token = 7 cells -> 128 symbols. Collapses the trivial
+  # "predict mostly-dead" floor (0.63 -> ~0.04) so the task forces learning the rule.
+  tokenize: { mode: block, block_size: 7 }
+
+# forward masking hides the bottom frame (= state t+1); forward_rows MUST equal grid.H//2.
+masking: { mode: forward, mask_ratio: 0.5, forward_rows: 7 }
+
+dataset: { n_samples: 100000, batch_size: 256, num_workers: 4, pin_memory: true }
+training: { steps: 15000, device: cuda }
+optimizer: { lr: 0.002, weight_decay: 0.05, betas: [0.9, 0.999] }
+scheduler: { enabled: true, warmup_steps: 1000, warmup_start_lr: 1.0e-6, min_lr: 1.0e-5 }
+checkpoint: { out_dir: checkpoints, save_steps: [15000] }
+wandb: { enabled: false, project: procedural-warmup-ca }
+logging: { print_freq: 50, progress: true, figure_every: 1000 }

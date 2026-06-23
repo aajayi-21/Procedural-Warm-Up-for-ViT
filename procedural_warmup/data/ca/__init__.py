@@ -21,7 +21,14 @@ def build_ca(cfg):
 
 @register_source("gol")
 def build_gol(cfg):
-    """2-D Game of Life source (Stage-4 scaffold)."""
+    """2-D Game of Life next-state source. Requires ``forward`` masking aligned to the
+    two-frame split, i.e. ``masking.forward_rows == grid.H // 2``."""
+    if cfg.masking.mode != "forward" or cfg.masking.forward_rows != cfg.grid.H // 2:
+        raise ValueError(
+            "GoL next-state requires masking.mode='forward' and "
+            f"masking.forward_rows == grid.H//2 ({cfg.grid.H // 2}); got "
+            f"mode={cfg.masking.mode!r}, forward_rows={cfg.masking.forward_rows}"
+        )
     return GameOfLifeGrid(cfg), CAMasking(cfg)
 
 
