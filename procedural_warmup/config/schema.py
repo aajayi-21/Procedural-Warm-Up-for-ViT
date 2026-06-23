@@ -28,6 +28,9 @@ class ModelConfig:
     embed_dim: int = 192
     num_classes: int = 0  # warm-up has no classifier head; the MLM head is separate
     drop_path_rate: float = 0.0
+    # Freeze the positional embedding (paper default). Set False for 2-D sources (Game of
+    # Life) so the model can learn the spatial stencil; positions are discarded at transfer.
+    freeze_pos: bool = True
 
 
 @dataclass

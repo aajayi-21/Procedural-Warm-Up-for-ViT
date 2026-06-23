@@ -21,13 +21,12 @@ def build_ca(cfg):
 
 @register_source("gol")
 def build_gol(cfg):
-    """2-D Game of Life next-state source. Requires ``forward`` masking aligned to the
-    two-frame split, i.e. ``masking.forward_rows == grid.H // 2``."""
-    if cfg.masking.mode != "forward" or cfg.masking.forward_rows != cfg.grid.H // 2:
+    """2-D Game of Life next-state source. With ``forward`` masking, forward_rows must
+    equal grid.H//2 so the masked region is exactly the future frame."""
+    if cfg.masking.mode == "forward" and cfg.masking.forward_rows != cfg.grid.H // 2:
         raise ValueError(
-            "GoL next-state requires masking.mode='forward' and "
-            f"masking.forward_rows == grid.H//2 ({cfg.grid.H // 2}); got "
-            f"mode={cfg.masking.mode!r}, forward_rows={cfg.masking.forward_rows}"
+            f"GoL forward masking needs masking.forward_rows == grid.H//2 "
+            f"({cfg.grid.H // 2}); got {cfg.masking.forward_rows}"
         )
     return GameOfLifeGrid(cfg), CAMasking(cfg)
 

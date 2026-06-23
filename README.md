@@ -76,24 +76,30 @@ python -m procedural_warmup.analysis.task_difficulty
 | `dyck_shuffle` | `dyck-shuffle.yaml` | context-sensitive, crossing dependencies |
 | `ww` | `ww.yaml` | regular copy-language (negative control — hurts) |
 | `ca` | `ca-rule110.yaml` | 1-D ECA Rule 110, **binary** (baseline — too easy) |
-| `ca` | `ca-rule110-block.yaml` | Rule 110, **block** tokens (128 symbols ≈ k-Dyck difficulty) |
-| `ca` | `ca-rule110-forward.yaml` | Rule 110, **next-state** masking (iterated computation) |
-| `ca` | `ca-rule110-hard.yaml` | Rule 110, block + next-state (both levers) |
-| `gol` | `gol.yaml` | **2-D Game of Life**, next-state prediction |
+| `ca` | `ca-rule110-block.yaml` | Rule 110, **block** tokens (128 symbols ≈ k-Dyck difficulty) — **verified to learn** |
+| `ca` | `ca-rule110-forward.yaml` | Rule 110, forward masking — *ablation; did not learn in probes* |
+| `ca` | `ca-rule110-hard.yaml` | Rule 110, block + forward — *ablation; did not learn in probes* |
+| `gol` | `gol.yaml` | **2-D Game of Life**, next-state — *Stage-4 scaffold; not yet verified* |
 
-**CA difficulty.** The default binary Rule-110 task is near-trivial — 2 target symbols, ~1
-bit of entropy, a majority guess already scores 56% — so it underperforms k-Dyck.
-`ca-rule110-block.yaml` raises the per-token vocabulary to 128 symbols (block tokenization),
-matching k-Dyck's ~6-bit difficulty. Raising the embedding `vocab.K` alone does **not** help
-(binary CA emits 2 states regardless); block tokenization is the lever.
+**What actually learns (from CPU learning-curve probes).** Two factors decide whether a
+warm-up task is learnable in practice, beyond the `task_difficulty` floor:
+- **block tokenization** — the default binary Rule-110 task is near-trivial (2 symbols, ~1
+  bit, majority-guess 56%), so it underperforms k-Dyck. `ca-rule110-block.yaml` raises the
+  per-token vocabulary to 128 symbols, matching k-Dyck's ~6-bit difficulty (raising `vocab.K`
+  alone does **not** help — binary CA emits 2 states regardless). **ca-block learns strongly.**
+- **random vs forward masking** — scattered random/close masking (k-Dyck, ca-block) learns;
+  **`forward` masking** (predict a whole contiguous masked region with no interspersed visible
+  context) did **not** learn in the probe budget. So `ca-rule110-forward`/`-hard` are kept only
+  as ablations. The verified-effective recipe is **block tokenization + random masking**.
 
-**Game of Life** (`gol.yaml`) is a native 2-D source: each sample stacks two consecutive
-frames (state *t* on top, *t+1* below) and the model predicts the future frame, forcing it to
-apply the B3/S23 rule. On a torus the target is fully determined by the visible frame, so it
-is noise-free and fully learnable. It uses **block tokenization** so the task isn't the
-degenerate "predict mostly-dead cells" trap of a single binary frame — block tokens collapse
-that trivial floor from ~0.63 to ~0.06 (verified by `task_difficulty`), giving 128 distinct
-targets and ~6.6 bits of entropy (richer than k-Dyck).
+**Game of Life** (`gol.yaml`) stacks two consecutive frames (state *t*, *t+1*) and predicts
+the future frame (B3/S23). It is a **Stage-4 research scaffold, not yet verified effective**:
+across CPU probes this task — and every variant tried (binary/block, forward/random masking,
+frozen/learnable positions, single-frame inpainting) — did not learn within the budget where
+ECA-block and k-Dyck do. The likely reason is that GoL's rule-bearing dependency is *2-D and
+cross-frame*, which the 1-D-token + random-positional ViT does not crack quickly (the ECA
+spacetime's dependency is local and 1-D). It is provided runnable for GPU validation or
+redesign (e.g. a 2-D positional encoding); the verified 2-D-structured source is ECA-block.
 
 ## Repository layout
 

@@ -1,17 +1,22 @@
-"""2-D Conway's Game of Life (B3/S23) as a next-state-prediction warm-up source.
+"""2-D Conway's Game of Life (B3/S23) warm-up source — next-state prediction.
 
-Outer-totalistic binary CA on a toroidal square lattice with the 8-cell Moore
-neighborhood: a dead cell is born on exactly 3 live neighbors; a live cell survives on 2
-or 3. Its native 2-D ``(y, x)`` grid maps directly onto ViT patch geometry.
+Outer-totalistic binary CA on a toroidal square lattice (8-cell Moore neighborhood): a dead
+cell is born on exactly 3 live neighbors; a live cell survives on 2 or 3.
 
-**Task (why it is effective).** A naive "inpaint a single Life snapshot" objective is
-degenerate — Life is mostly dead cells, so predicting "dead" everywhere already scores
-~90%+. Instead each sample stacks two consecutive frames in the token grid: the top half is
-state *t* (visible), the bottom half is state *t+gol_steps* (masked via ``forward`` masking).
-Predicting the future frame requires applying the Life rule to every cell. Because the frame
-is a torus and is fully visible, the target is **fully determined and noise-free**, so the
-masked-token accuracy can climb from the dead-cell prior all the way to ~1.0 purely by
-learning the rule — a clean, well-posed, genuinely structured objective.
+**Task.** Each sample stacks two consecutive frames in the token grid — state *t* (top half)
+and state *t+gol_steps* (bottom half) — block-tokenized. With ``forward`` masking the model
+predicts the future frame from the past one, forcing it to apply the Life rule; on a torus
+the target is fully determined by the visible frame (clean, noise-free). Block tokenization
+keeps the target non-trivial (a binary frame is mostly dead -> degenerate).
+
+**Status — not yet verified effective.** Across CPU learning-curve probes this GoL task (and
+every variant tried: binary/block tokenization, forward vs random masking, frozen vs
+learnable positions, single-frame inpainting) did NOT learn within the step budget where the
+1-D ECA-block and k-Dyck sources clearly do. The likely cause: the rule-bearing dependency is
+*cross-frame* and 2-D, which the 1-D-token + random-positional ViT does not crack quickly,
+whereas the ECA spacetime's dependency is local and 1-D. This source is provided as a
+Stage-4 research scaffold — validate on the full GPU run or redesign (e.g. a 2-D positional
+encoding / larger token budget). The verified-effective source is ECA Rule-110 ``block``.
 """
 
 from __future__ import annotations
@@ -48,25 +53,21 @@ def simulate_life(height: int, width: int, burn_in: int, init_density: float,
 
 
 class GameOfLifeGrid(ProceduralDataset):
-    """Stacks ``state_t`` (top half) and ``state_{t+gol_steps}`` (bottom half) of a Life
-    grid into one length-N token sequence for next-state prediction."""
+    """Stacks state t (top half) and state t+gol_steps (bottom half) for next-state prediction."""
 
     def __init__(self, cfg) -> None:
         self.cfg = cfg
         self.H, self.W = cfg.grid.H, cfg.grid.W
         self.N = self.H * self.W
         if self.H % 2 != 0:
-            raise ValueError("GoL next-state needs an even grid.H (two stacked frames)")
-        self.fH, self.fW = self.H // 2, self.W  # per-frame token dimensions
+            raise ValueError("GoL needs an even grid.H (two stacked frames)")
+        self.fH = self.H // 2  # per-frame token rows
         self.burn_in = cfg.ca.burn_in
         self.init_density = cfg.ca.init_density
-        self.steps = max(1, cfg.ca.gol_steps)
-        # Block tokenization (7 cells -> one of 128 symbols) collapses the trivial
-        # "predict mostly-dead" floor (a 7-cell block is almost never all-dead), forcing
-        # the model to predict the full next-state pattern. See ca/tokenize.py.
+        self.gol_steps = max(1, cfg.ca.gol_steps)
         self.tok_mode = cfg.ca.tokenize.mode
         self.block_size = cfg.ca.tokenize.block_size
-        self.cell_W = self.fW * tok.cells_per_token(self.tok_mode, self.block_size)
+        self.cell_W = self.W * tok.cells_per_token(self.tok_mode, self.block_size)
         required_K = tok.required_vocab(self.tok_mode, self.block_size)
         assert cfg.vocab.K >= required_K, (
             f"vocab.K={cfg.vocab.K} < required {required_K} for tokenize '{self.tok_mode}'"
@@ -84,7 +85,7 @@ class GameOfLifeGrid(ProceduralDataset):
         rng = np.random.default_rng()
         t0 = simulate_life(self.fH, self.cell_W, self.burn_in, self.init_density, rng)
         t1 = t0.copy()
-        for _ in range(self.steps):
+        for _ in range(self.gol_steps):
             t1 = life_step(t1)
         ids = np.concatenate([self._tokenize(t0), self._tokenize(t1)], axis=0)  # (H, W)
         return torch.tensor(ids.reshape(self.N), dtype=torch.long)

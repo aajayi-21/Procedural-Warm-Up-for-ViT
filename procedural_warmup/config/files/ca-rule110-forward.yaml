@@ -1,7 +1,8 @@
 # CA warm-up with FORWARD (next-state) masking — predict future rows from past ones.
-# Keeps binary tokenization but forces iterated rule application (genuine computation),
-# the objective used in "Intelligence at the Edge of Chaos". Ablates the masking lever
-# independently of vocabulary.
+# NOTE: in CPU learning-curve probes, forward masking did NOT learn within the budget where
+# block+random masking clearly does (predicting a whole contiguous masked region with no
+# interspersed visible context is much harder). Prefer ca-rule110-block.yaml; this config is
+# kept as an ablation / for longer-budget GPU investigation.
 seed: 42
 run_name: ca-rule110-forward
 results_dir: results

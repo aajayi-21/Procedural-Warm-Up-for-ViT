@@ -34,7 +34,7 @@ def build_model(cfg) -> tuple[ProceduralViT, nn.Linear]:
 
     N = cfg.grid.H * cfg.grid.W
     tok = FrozenTokenEmbedding(cfg.vocab.K, embed_dim)
-    pos = FrozenPositionalEmbedding(N, embed_dim)
+    pos = FrozenPositionalEmbedding(N, embed_dim, trainable=not cfg.model.freeze_pos)
     model = ProceduralViT(backbone, tok, pos, cfg.grid.H, cfg.grid.W)
     mlm_head = nn.Linear(embed_dim, cfg.vocab.K)
     return model, mlm_head

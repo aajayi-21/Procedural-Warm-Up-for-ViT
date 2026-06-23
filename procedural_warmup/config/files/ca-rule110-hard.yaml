@@ -1,6 +1,7 @@
-# CA warm-up combining BLOCK tokenization + FORWARD masking — the recommended "hard" CA:
-# k-Dyck-level per-token difficulty (128 symbols) AND a task that requires iterated rule
-# application (predict future block-rows from past). Best candidate to match/beat k-Dyck.
+# CA warm-up combining BLOCK tokenization + FORWARD masking.
+# NOTE: the FORWARD-masking half did NOT learn in CPU probes (block+forward stalled near its
+# floor while block+RANDOM, ca-rule110-block.yaml, learned strongly). Use ca-rule110-block.yaml
+# as the recommended harder-CA config; this is kept as an ablation for GPU investigation.
 seed: 42
 run_name: ca-rule110-hard
 results_dir: results

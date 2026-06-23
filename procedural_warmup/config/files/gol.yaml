@@ -1,15 +1,19 @@
 # Procedural warm-up on 2-D Conway's Game of Life (B3/S23) via next-state prediction.
 #
-# The 14x14 token grid holds two stacked 7x14 frames: the top frame is state t (visible),
-# the bottom frame is state t+gol_steps (masked). The model predicts the future frame from
-# the past one, which forces it to apply the Life rule to every cell. On a toroidal frame
-# the target is fully determined and noise-free, so the task is cleanly learnable.
+# STATUS: Stage-4 research scaffold — NOT yet verified effective. Across CPU learning-curve
+# probes this task (and every variant tried) did not learn within the budget where the 1-D
+# ECA-block and k-Dyck sources clearly do; the 2-D cross-frame dependency appears hard for
+# the 1-D-token/random-positional ViT to crack quickly. Provided so it can be validated on
+# the full GPU run or redesigned. The verified-effective source is ca-rule110-block.yaml.
+#
+# Layout: 14x14 token grid = two stacked 7x14 block-token frames (state t on top, t+1 below);
+# forward masking hides the bottom frame so the model predicts t+1 from t (applies the rule).
 seed: 42
 run_name: gol
 results_dir: results
 
 model: { name: vit_tiny_patch16_224, embed_dim: 192 }
-grid: { H: 14, W: 14 }                 # two stacked frames -> N = 196 tokens
+grid: { H: 14, W: 14 }                 # two stacked 7x(14*7=98)-cell frames -> 14x14 block tokens
 vocab: { K: 130, PAD_ID: 0, MASK_ID: 1 }   # 2 specials + 2^7 block symbols
 
 data:
@@ -18,11 +22,9 @@ data:
 ca:
   dim: 2
   burn_in: 0                           # t = random config (max diversity); evolve to t+1
-  init_density: 0.38                   # active regime (avoids the all-dead degenerate state)
+  init_density: 0.38
   gol_steps: 1                         # predict one Life step ahead
-  # Block tokenization: each token = 7 cells -> 128 symbols. Collapses the trivial
-  # "predict mostly-dead" floor (0.63 -> ~0.04) so the task forces learning the rule.
-  tokenize: { mode: block, block_size: 7 }
+  tokenize: { mode: block, block_size: 7 }   # block tokens keep the target non-trivial
 
 # forward masking hides the bottom frame (= state t+1); forward_rows MUST equal grid.H//2.
 masking: { mode: forward, mask_ratio: 0.5, forward_rows: 7 }

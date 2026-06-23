@@ -38,16 +38,23 @@ class FrozenTokenEmbedding(nn.Module):
 
 
 class FrozenPositionalEmbedding(nn.Module):
-    """Random unit-vector positional embedding (scaled), frozen after init."""
+    """Random unit-vector positional embedding (scaled).
 
-    def __init__(self, N: int, d: int, scale: float = 0.02) -> None:
+    Frozen by default (the paper's setup — forces structure into the transformer blocks).
+    Set ``trainable=True`` to let the model learn positions: this matters for 2-D tasks
+    (e.g. Game of Life) where the random frozen positions give no geometric prior for the
+    spatial stencil. Positions are discarded at transfer regardless, so the method's premise
+    (gains live in the blocks) is preserved.
+    """
+
+    def __init__(self, N: int, d: int, scale: float = 0.02, trainable: bool = False) -> None:
         super().__init__()
         vecs = torch.randn(N, d)
         vecs = vecs / vecs.norm(dim=1, keepdim=True) * scale
         self.emb = nn.Embedding(N, d)
         with torch.no_grad():
             self.emb.weight.copy_(vecs)
-        self.emb.weight.requires_grad_(False)
+        self.emb.weight.requires_grad_(trainable)
 
     def forward(self, idx: torch.Tensor) -> torch.Tensor:
         return self.emb(idx)
