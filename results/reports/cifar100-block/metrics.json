@@ -1,0 +1,23 @@
+{
+  "run_name": "cifar100-block",
+  "dataset": "CIFAR100",
+  "init_checkpoint": "checkpoints/ca-rule110-block/ckpt_step_015000_stripped.pt",
+  "train_fraction": 1.0,
+  "epochs": 300,
+  "best_top1": 71.41999816894531,
+  "final_top1": 71.33000183105469,
+  "final_top5": 91.95999908447266,
+  "init_summary": {
+    "loaded": 146,
+    "missing": [
+      "cls_token",
+      "pos_embed",
+      "patch_embed.proj.weight",
+      "patch_embed.proj.bias",
+      "head.weight",
+      "head.bias"
+    ],
+    "unexpected": []
+  },
+  "finished": "2026-06-24T15:37:15Z"
+}

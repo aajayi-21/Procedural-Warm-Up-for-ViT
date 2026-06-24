@@ -1,0 +1,13 @@
+{
+  "run_name": "ca-rule110-hard",
+  "source": "ca",
+  "rule": 110,
+  "masking": {
+    "mode": "forward",
+    "ratio": 0.5
+  },
+  "steps": 15000,
+  "final_avg_loss": 0.2965782171810667,
+  "final_avg_acc": 0.9123969151023775,
+  "checkpoint": "checkpoints/ca-rule110-hard/ckpt_step_015000.pt"
+}

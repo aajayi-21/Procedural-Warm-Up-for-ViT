@@ -1,0 +1,35 @@
+{
+  "comparison": [
+    {
+      "label": "Random",
+      "run": "cifar100-random",
+      "best_top1": 70.0199966430664,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA-binary",
+      "run": "cifar100-rule110",
+      "best_top1": 68.86000061035156,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA-block",
+      "run": "cifar100-block",
+      "best_top1": 71.41999816894531,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA-hard",
+      "run": "cifar100-hard",
+      "best_top1": 71.86000061035156,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "k-Dyck",
+      "run": "cifar100-dyck",
+      "best_top1": 72.63999938964844,
+      "dataset": "CIFAR100"
+    }
+  ],
+  "winner": "k-Dyck"
+}
