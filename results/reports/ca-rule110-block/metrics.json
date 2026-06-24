@@ -1,0 +1,13 @@
+{
+  "run_name": "ca-rule110-block",
+  "source": "ca",
+  "rule": 110,
+  "masking": {
+    "mode": "random",
+    "ratio": 0.5
+  },
+  "steps": 15000,
+  "final_avg_loss": 0.21100396973664562,
+  "final_avg_acc": 0.9361717390340443,
+  "checkpoint": "checkpoints/ca-rule110-block/ckpt_step_015000.pt"
+}
