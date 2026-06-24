@@ -170,6 +170,7 @@ def main() -> None:
     ap.add_argument("--init", default=None, help="override cfg.init_checkpoint")
     ap.add_argument("--dataset", default=None, help="override cfg.data.dataset")
     ap.add_argument("--run-name", default=None, help="override cfg.run_name")
+    ap.add_argument("--seed", type=int, default=None, help="override cfg.seed (for seed sweeps)")
     args = ap.parse_args()
 
     cfg = load_downstream_config(args.config)
@@ -179,6 +180,8 @@ def main() -> None:
         cfg.data.dataset = args.dataset
     if args.run_name is not None:
         cfg.run_name = args.run_name
+    if args.seed is not None:
+        cfg.seed = args.seed
     run(cfg)
 
 

@@ -91,6 +91,20 @@ class CAConfig:
 
 
 @dataclass
+class CAStepConfig:
+    """IID single-step CA transduction (Phase-1 texture-vs-operator test).
+
+    ``mode="true"`` predicts ``rule(x)`` from an i.i.d. board ``x``; ``mode="shuffled"``
+    predicts ``rule(z)`` for an unrelated ``z`` at the same density (output-marginal control).
+    """
+
+    rule: int = 110  # ECA rule for the one-step map
+    boundary: str = "periodic"  # "periodic" | "zero"
+    densities: list = field(default_factory=lambda: [0.15, 0.25, 0.35, 0.45, 0.55, 0.65])
+    mode: str = "true"  # "true" | "shuffled"
+
+
+@dataclass
 class MaskingConfig:
     """Masked-token objective. Shared ``mask_ratio`` across sources.
 
@@ -189,6 +203,7 @@ class RootConfig:
     dyck: DyckConfig = field(default_factory=DyckConfig)
     ww: WWConfig = field(default_factory=WWConfig)
     ca: CAConfig = field(default_factory=CAConfig)
+    ca_step: CAStepConfig = field(default_factory=CAStepConfig)
     masking: MaskingConfig = field(default_factory=MaskingConfig)
     dataset: DatasetConfig = field(default_factory=DatasetConfig)
     training: TrainingConfig = field(default_factory=TrainingConfig)

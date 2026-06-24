@@ -10,6 +10,11 @@ from __future__ import annotations
 from procedural_warmup.data import register_source
 from procedural_warmup.data.ca.dataset import CASpacetimeGrid
 from procedural_warmup.data.ca.gol import GameOfLifeGrid
+from procedural_warmup.data.ca.iid_step import (
+    CaStepDataset,
+    IidBoardDataset,
+    TransductionMasking,
+)
 from procedural_warmup.data.ca.masking import CAMasking
 
 
@@ -25,4 +30,27 @@ def build_gol(cfg):
     return GameOfLifeGrid(cfg), CAMasking(cfg)
 
 
-__all__ = ["CASpacetimeGrid", "GameOfLifeGrid", "CAMasking", "build_ca", "build_gol"]
+@register_source("ca_step")
+def build_ca_step(cfg):
+    """IID single-step ECA transduction (operator vs texture; ``ca_step.mode`` true|shuffled)."""
+    return CaStepDataset(cfg), TransductionMasking(cfg)
+
+
+@register_source("iid_board")
+def build_iid_board(cfg):
+    """IID Bernoulli board + random masking — structure-free reconstruction floor."""
+    return IidBoardDataset(cfg), CAMasking(cfg)
+
+
+__all__ = [
+    "CASpacetimeGrid",
+    "GameOfLifeGrid",
+    "CAMasking",
+    "CaStepDataset",
+    "IidBoardDataset",
+    "TransductionMasking",
+    "build_ca",
+    "build_gol",
+    "build_ca_step",
+    "build_iid_board",
+]

@@ -1,0 +1,29 @@
+# Phase-1 OPERATOR test: predict the full next Rule-110 state from the full current state
+# of an i.i.d. Bernoulli board. No evolved texture, no visible target tokens (full-mask
+# transduction). Density sampled per example so the target marginal is not a fixed bias.
+seed: 42
+run_name: ca-iid1step-true
+results_dir: results
+
+model: { name: vit_tiny_patch16_224, embed_dim: 192 }
+grid: { H: 14, W: 14 }                       # 196-cell 1-D board
+vocab: { K: 4, PAD_ID: 0, MASK_ID: 1 }       # binary tokenization
+
+data:
+  source: ca_step
+
+ca_step:
+  rule: 110
+  boundary: periodic
+  densities: [0.15, 0.25, 0.35, 0.45, 0.55, 0.65]
+  mode: "true"                               # target = Rule110(x)
+
+masking: { mode: random, mask_ratio: 0.5 }   # ignored by TransductionMasking (full mask)
+
+dataset: { n_samples: 100000, batch_size: 256, num_workers: 16, pin_memory: true }
+training: { steps: 15000, device: cuda }
+optimizer: { lr: 0.002, weight_decay: 0.05, betas: [0.9, 0.999] }
+scheduler: { enabled: true, warmup_steps: 1000, warmup_start_lr: 1.0e-6, min_lr: 1.0e-5 }
+checkpoint: { out_dir: checkpoints, save_steps: [15000] }
+wandb: { enabled: false, project: procedural-warmup-ca }
+logging: { print_freq: 50, progress: true, figure_every: 1000 }

@@ -24,6 +24,8 @@ def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="Procedural warm-up (masked-token pretraining).")
     ap.add_argument("--config", required=True, help="path to a warm-up YAML config")
     ap.add_argument("--no-strip", action="store_true", help="skip writing a stripped ckpt")
+    ap.add_argument("--seed", type=int, default=None, help="override cfg.seed (for seed sweeps)")
+    ap.add_argument("--run-name", default=None, help="override cfg.run_name (isolate a seed run)")
     return ap.parse_args()
 
 
@@ -64,6 +66,10 @@ def main() -> None:
     cfg = load_config(args.config)
     if args.no_strip:
         cfg._no_strip = True
+    if args.seed is not None:
+        cfg.seed = args.seed
+    if args.run_name is not None:
+        cfg.run_name = args.run_name
     run(cfg)
 
 
