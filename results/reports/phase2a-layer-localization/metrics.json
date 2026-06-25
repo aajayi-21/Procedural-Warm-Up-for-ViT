@@ -1,0 +1,59 @@
+{
+  "comparison": [
+    {
+      "label": "Dyck-full",
+      "run": "cifar100-dyck",
+      "best_top1": 72.63999938964844,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "Dyck-late",
+      "run": "p2-dyck-late",
+      "best_top1": 72.41999816894531,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "Dyck-early",
+      "run": "p2-dyck-early",
+      "best_top1": 70.73999786376953,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA-full",
+      "run": "p2-ca-full",
+      "best_top1": 71.83999633789062,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA-late",
+      "run": "p2-ca-late",
+      "best_top1": 70.7699966430664,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA-early",
+      "run": "p2-ca-early",
+      "best_top1": 70.04000091552734,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "graft-DyE+CaL",
+      "run": "p2-graft-dyckE-caL",
+      "best_top1": 72.04999542236328,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "graft-CaE+DyL",
+      "run": "p2-graft-caE-dyckL",
+      "best_top1": 71.19999694824219,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "Random",
+      "run": "cifar100-random",
+      "best_top1": 70.0199966430664,
+      "dataset": "CIFAR100"
+    }
+  ],
+  "winner": "Dyck-full"
+}

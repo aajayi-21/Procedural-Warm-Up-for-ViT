@@ -1,0 +1,37 @@
+{
+  "run_name": "p2-dyck-late",
+  "dataset": "CIFAR100",
+  "init_checkpoint": null,
+  "train_fraction": 1.0,
+  "epochs": 300,
+  "best_top1": 72.41999816894531,
+  "final_top1": 72.41999816894531,
+  "final_top5": 92.47999572753906,
+  "init_summary": {
+    "specs": [
+      {
+        "ckpt": "checkpoints/dyck-vit-t/ckpt_step_015000_stripped.pt",
+        "blocks": "8-11",
+        "tag": "DYCK"
+      }
+    ],
+    "loaded_tensors": 50,
+    "block_sources": {
+      "0": "random",
+      "1": "random",
+      "2": "random",
+      "3": "random",
+      "4": "random",
+      "5": "random",
+      "6": "random",
+      "7": "random",
+      "8": "DYCK",
+      "9": "DYCK",
+      "10": "DYCK",
+      "11": "DYCK"
+    },
+    "missing": 102,
+    "unexpected": 0
+  },
+  "finished": "2026-06-25T19:01:32Z"
+}

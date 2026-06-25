@@ -1,0 +1,37 @@
+{
+  "run_name": "p2-ca-early",
+  "dataset": "CIFAR100",
+  "init_checkpoint": null,
+  "train_fraction": 1.0,
+  "epochs": 300,
+  "best_top1": 70.04000091552734,
+  "final_top1": 70.04000091552734,
+  "final_top5": 91.37999725341797,
+  "init_summary": {
+    "specs": [
+      {
+        "ckpt": "checkpoints/ca-rule110-block-s1-5090/ckpt_step_015000_stripped.pt",
+        "blocks": "0-3",
+        "tag": "CA"
+      }
+    ],
+    "loaded_tensors": 50,
+    "block_sources": {
+      "0": "CA",
+      "1": "CA",
+      "2": "CA",
+      "3": "CA",
+      "4": "random",
+      "5": "random",
+      "6": "random",
+      "7": "random",
+      "8": "random",
+      "9": "random",
+      "10": "random",
+      "11": "random"
+    },
+    "missing": 102,
+    "unexpected": 0
+  },
+  "finished": "2026-06-25T18:25:17Z"
+}

@@ -1,0 +1,42 @@
+{
+  "run_name": "p2-graft-caE-dyckL",
+  "dataset": "CIFAR100",
+  "init_checkpoint": null,
+  "train_fraction": 1.0,
+  "epochs": 300,
+  "best_top1": 71.19999694824219,
+  "final_top1": 71.12999725341797,
+  "final_top5": 91.93000030517578,
+  "init_summary": {
+    "specs": [
+      {
+        "ckpt": "checkpoints/ca-rule110-block-s1-5090/ckpt_step_015000_stripped.pt",
+        "blocks": "0-3",
+        "tag": "CA"
+      },
+      {
+        "ckpt": "checkpoints/dyck-vit-t/ckpt_step_015000_stripped.pt",
+        "blocks": "8-11",
+        "tag": "DYCK"
+      }
+    ],
+    "loaded_tensors": 98,
+    "block_sources": {
+      "0": "CA",
+      "1": "CA",
+      "2": "CA",
+      "3": "CA",
+      "4": "random",
+      "5": "random",
+      "6": "random",
+      "7": "random",
+      "8": "DYCK",
+      "9": "DYCK",
+      "10": "DYCK",
+      "11": "DYCK"
+    },
+    "missing": 54,
+    "unexpected": 0
+  },
+  "finished": "2026-06-25T20:13:53Z"
+}
