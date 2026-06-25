@@ -21,7 +21,7 @@ from timm.scheduler import CosineLRScheduler
 from procedural_warmup.config import config_to_dict, load_downstream_config
 from procedural_warmup.downstream.datasets import build_loaders
 from procedural_warmup.downstream.engine import evaluate, train_one_epoch
-from procedural_warmup.downstream.init_weights import load_warmup_init
+from procedural_warmup.downstream.init_weights import apply_init_spec, load_warmup_init
 from procedural_warmup.utils import RunDir, now_iso, resolve_device, set_seed
 
 
@@ -57,7 +57,10 @@ def run(cfg) -> dict:
         drop_path_rate=cfg.model.drop_path_rate,
     )
     init_summary = None
-    if cfg.init_checkpoint:
+    spec = getattr(cfg, "init_spec", None)
+    if spec:
+        init_summary = apply_init_spec(model, spec, seed=cfg.seed)
+    elif cfg.init_checkpoint:
         init_summary = load_warmup_init(model, cfg.init_checkpoint)
     model.to(device)
 
@@ -171,11 +174,17 @@ def main() -> None:
     ap.add_argument("--dataset", default=None, help="override cfg.data.dataset")
     ap.add_argument("--run-name", default=None, help="override cfg.run_name")
     ap.add_argument("--seed", type=int, default=None, help="override cfg.seed (for seed sweeps)")
+    ap.add_argument("--init-spec", default=None,
+                    help="JSON list of {ckpt,blocks,components,shuffle,norm} for layer surgery/grafts")
     args = ap.parse_args()
 
     cfg = load_downstream_config(args.config)
     if args.init is not None:
         cfg.init_checkpoint = None if args.init.lower() == "none" else args.init
+    if args.init_spec is not None:
+        import json
+
+        cfg.init_spec = json.loads(args.init_spec)
     if args.dataset is not None:
         cfg.data.dataset = args.dataset
     if args.run_name is not None:
