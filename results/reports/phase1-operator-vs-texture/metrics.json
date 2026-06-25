@@ -1,0 +1,53 @@
+{
+  "comparison": [
+    {
+      "label": "k-Dyck",
+      "run": "cifar100-dyck",
+      "best_top1": 72.63999938964844,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA-hard",
+      "run": "cifar100-hard",
+      "best_top1": 71.86000061035156,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA-block",
+      "run": "cifar100-block",
+      "best_top1": 71.41999816894531,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "Random",
+      "run": "cifar100-random",
+      "best_top1": 70.0199966430664,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA-binary",
+      "run": "cifar100-rule110",
+      "best_top1": 68.86000061035156,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "iid-shuffled",
+      "run": "cifar100-iid-shuffled",
+      "best_top1": 66.9000015258789,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "iid-true",
+      "run": "cifar100-iid-true",
+      "best_top1": 66.80999755859375,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "iid-static",
+      "run": "cifar100-iid-static",
+      "best_top1": 65.72000122070312,
+      "dataset": "CIFAR100"
+    }
+  ],
+  "winner": "k-Dyck"
+}

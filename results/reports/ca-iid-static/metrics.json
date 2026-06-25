@@ -1,0 +1,13 @@
+{
+  "run_name": "ca-iid-static",
+  "source": "iid_board",
+  "rule": null,
+  "masking": {
+    "mode": "random",
+    "ratio": 0.5
+  },
+  "steps": 15000,
+  "final_avg_loss": 0.617285388704141,
+  "final_avg_acc": 0.6578759670535723,
+  "checkpoint": "checkpoints/ca-iid-static/ckpt_step_015000.pt"
+}

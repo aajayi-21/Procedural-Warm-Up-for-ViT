@@ -1,0 +1,13 @@
+{
+  "run_name": "ca-iid1step-true",
+  "source": "ca_step",
+  "rule": null,
+  "masking": {
+    "mode": "random",
+    "ratio": 0.5
+  },
+  "steps": 15000,
+  "final_avg_loss": 0.035500330728847805,
+  "final_avg_acc": 0.9829168291807174,
+  "checkpoint": "checkpoints/ca-iid1step-true/ckpt_step_015000.pt"
+}
