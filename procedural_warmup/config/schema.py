@@ -28,6 +28,7 @@ class ModelConfig:
     embed_dim: int = 192
     num_classes: int = 0  # warm-up has no classifier head; the MLM head is separate
     drop_path_rate: float = 0.0
+    pos_embed: str = "random"  # frozen warm-up positional encoding: "random" | "sincos2d"
 
 
 @dataclass
@@ -62,6 +63,18 @@ class WWConfig:
     """WW regular-language generator (a random substring concatenated with its copy)."""
 
     n_symbols: int = 64  # alphabet size; vocab.K must be >= 2 + n_symbols
+
+
+@dataclass
+class SpatialDyckConfig:
+    """Layout for the spatial-Dyck source — same k-Dyck tree, different token geometry.
+
+    ``mode``: ``1d`` (row-major, == k-Dyck baseline) | ``nested`` (Hilbert-curve 2-D, the
+    spatial-hierarchy candidate) | ``permuted`` (random coordinates, geometry-destroyed
+    control). Generation params are shared with :class:`DyckConfig`.
+    """
+
+    mode: str = "nested"  # "1d" | "nested" | "permuted"
 
 
 @dataclass
@@ -202,6 +215,7 @@ class RootConfig:
     data: DataConfig = field(default_factory=DataConfig)
     dyck: DyckConfig = field(default_factory=DyckConfig)
     ww: WWConfig = field(default_factory=WWConfig)
+    spatial_dyck: SpatialDyckConfig = field(default_factory=SpatialDyckConfig)
     ca: CAConfig = field(default_factory=CAConfig)
     ca_step: CAStepConfig = field(default_factory=CAStepConfig)
     masking: MaskingConfig = field(default_factory=MaskingConfig)
