@@ -1,0 +1,35 @@
+{
+  "comparison": [
+    {
+      "label": "Dyck-1D-rand",
+      "run": "cifar100-dyck",
+      "best_top1": 72.63999938964844,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "Dyck-1D-2Dpos",
+      "run": "cifar100-dyck-2dpos",
+      "best_top1": 72.18999481201172,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "Nested-2Dpos",
+      "run": "cifar100-sdyck-nested",
+      "best_top1": 70.41999816894531,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "Permuted-2Dpos",
+      "run": "cifar100-sdyck-permuted",
+      "best_top1": 66.93000030517578,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "Random",
+      "run": "cifar100-random",
+      "best_top1": 70.0199966430664,
+      "dataset": "CIFAR100"
+    }
+  ],
+  "winner": "Dyck-1D-rand"
+}

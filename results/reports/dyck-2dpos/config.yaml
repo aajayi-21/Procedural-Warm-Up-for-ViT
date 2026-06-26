@@ -1,0 +1,85 @@
+seed: 42
+run_name: dyck-2dpos
+results_dir: results
+model:
+  name: vit_tiny_patch16_224
+  embed_dim: 192
+  num_classes: 0
+  drop_path_rate: 0.0
+  pos_embed: sincos2d
+grid:
+  H: 14
+  W: 14
+vocab:
+  K: 130
+  PAD_ID: 0
+  MASK_ID: 1
+data:
+  source: dyck
+dyck:
+  k_open: 64
+  k_close: 64
+  open_prob: 0.6
+  min_pairs: 1
+ww:
+  n_symbols: 64
+spatial_dyck:
+  mode: nested
+ca:
+  rule: 110
+  dim: 1
+  sim_width: 64
+  burn_in: 32
+  boundary: periodic
+  init_density: 0.5
+  tokenize:
+    mode: binary
+    block_size: 7
+ca_step:
+  rule: 110
+  boundary: periodic
+  densities:
+  - 0.15
+  - 0.25
+  - 0.35
+  - 0.45
+  - 0.55
+  - 0.65
+  mode: 'true'
+masking:
+  mode: random
+  mask_ratio: 0.5
+  forward_rows: 6
+dataset:
+  n_samples: 100000
+  batch_size: 256
+  num_workers: 16
+  pin_memory: true
+training:
+  steps: 15000
+  device: cuda
+  use_amp: true
+optimizer:
+  lr: 0.002
+  weight_decay: 0.05
+  betas:
+  - 0.9
+  - 0.999
+scheduler:
+  enabled: true
+  warmup_steps: 1000
+  warmup_start_lr: 1.0e-06
+  min_lr: 1.0e-05
+checkpoint:
+  out_dir: checkpoints
+  save_steps:
+  - 15000
+wandb:
+  enabled: false
+  project: procedural-warmup-ca
+  entity: null
+logging:
+  print_freq: 50
+  progress: true
+  figure_every: 1000
+curriculum: []

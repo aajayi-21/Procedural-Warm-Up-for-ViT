@@ -1,0 +1,13 @@
+{
+  "run_name": "spatial-dyck-permuted",
+  "source": "spatial_dyck",
+  "rule": null,
+  "masking": {
+    "mode": "random",
+    "ratio": 0.5
+  },
+  "steps": 15000,
+  "final_avg_loss": 4.14289930340449,
+  "final_avg_acc": 0.024583804076289135,
+  "checkpoint": "checkpoints/spatial-dyck-permuted/ckpt_step_015000.pt"
+}

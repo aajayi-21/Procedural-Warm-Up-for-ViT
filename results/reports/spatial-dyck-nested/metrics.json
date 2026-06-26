@@ -1,0 +1,13 @@
+{
+  "run_name": "spatial-dyck-nested",
+  "source": "spatial_dyck",
+  "rule": null,
+  "masking": {
+    "mode": "random",
+    "ratio": 0.5
+  },
+  "steps": 15000,
+  "final_avg_loss": 1.1526946778507903,
+  "final_avg_acc": 0.6911678182993084,
+  "checkpoint": "checkpoints/spatial-dyck-nested/ckpt_step_015000.pt"
+}

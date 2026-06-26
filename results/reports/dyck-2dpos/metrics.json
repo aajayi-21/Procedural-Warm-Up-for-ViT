@@ -1,0 +1,13 @@
+{
+  "run_name": "dyck-2dpos",
+  "source": "dyck",
+  "rule": null,
+  "masking": {
+    "mode": "random",
+    "ratio": 0.5
+  },
+  "steps": 15000,
+  "final_avg_loss": 0.29707037211259885,
+  "final_avg_acc": 0.9203950287197407,
+  "checkpoint": "checkpoints/dyck-2dpos/ckpt_step_015000.pt"
+}
