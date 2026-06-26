@@ -1,0 +1,33 @@
+# BLOCK tokenization + 2-D positions. Tests whether the vocabulary modification (7 cells ->
+# one of 128 symbols, K=130) is STILL needed once the 2-D structure is retained. Compare to
+# ca-rule110-2dpos (binary + 2-D): if the two match, the block/vocab lever was largely
+# compensating for the flattening, not adding independent value.
+seed: 42
+run_name: ca-rule110-block-2dpos
+results_dir: results
+
+model: { name: vit_tiny_patch16_224, embed_dim: 192, pos_embed: sincos2d }
+grid: { H: 14, W: 14 }                       # 14 token-cols x 7 cells = 98 cells per row
+vocab: { K: 130, PAD_ID: 0, MASK_ID: 1 }     # 2 specials + 2^7 block symbols
+
+data:
+  source: ca
+
+ca:
+  rule: 110
+  dim: 1
+  sim_width: 128
+  burn_in: 32
+  boundary: periodic
+  init_density: 0.5
+  tokenize: { mode: block, block_size: 7 }
+
+masking: { mode: random, mask_ratio: 0.5 }
+
+dataset: { n_samples: 100000, batch_size: 256, num_workers: 4, pin_memory: true }
+training: { steps: 15000, device: cuda }
+optimizer: { lr: 0.002, weight_decay: 0.05, betas: [0.9, 0.999] }
+scheduler: { enabled: true, warmup_steps: 1000, warmup_start_lr: 1.0e-6, min_lr: 1.0e-5 }
+checkpoint: { out_dir: checkpoints, save_steps: [15000] }
+wandb: { enabled: false, project: procedural-warmup-ca }
+logging: { print_freq: 50, progress: true, figure_every: 1000 }

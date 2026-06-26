@@ -28,7 +28,9 @@ class ModelConfig:
     embed_dim: int = 192
     num_classes: int = 0  # warm-up has no classifier head; the MLM head is separate
     drop_path_rate: float = 0.0
-    pos_embed: str = "random"  # frozen warm-up positional encoding: "random" | "sincos2d"
+    # frozen warm-up positional encoding: "random" | "sincos2d" (time x space grid) |
+    # "sincos1d" (periodic N-cell ring, correct for the ca_step board).
+    pos_embed: str = "random"
 
 
 @dataclass
@@ -122,12 +124,14 @@ class MaskingConfig:
     """Masked-token objective. Shared ``mask_ratio`` across sources.
 
     ``mode`` is interpreted by the CA masking strategy (``random`` | ``forward`` |
-    ``lightcone``); the Dyck source ignores it (it always masks closing brackets).
+    ``lightcone`` | ``block2d``); the Dyck source ignores it (it always masks closing brackets).
     """
 
     mode: str = "random"
     mask_ratio: float = 0.5
     forward_rows: int = 6  # for CA ``forward`` mode: number of trailing (future) rows masked
+    block_h: int = 4  # for CA ``block2d`` mode: masked-rectangle height (time extent)
+    block_w: int = 4  # for CA ``block2d`` mode: masked-rectangle width (space extent)
 
 
 @dataclass

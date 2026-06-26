@@ -144,11 +144,16 @@ def plot_downstream_comparison(
     """Bar chart of a downstream metric across runs.
 
     ``runs`` is a list of ``(run_name, label)`` pairs; each run's ``metrics.json`` must
-    contain ``metric``.
+    contain ``metric``. Runs without a ``metrics.json`` yet are skipped (with a warning) so a
+    partially-complete experiment still charts the finished runs instead of crashing.
     """
     labels, values = [], []
     for run_name, label in runs:
-        m = load_metrics(results_dir, run_name)
+        try:
+            m = load_metrics(results_dir, run_name)
+        except FileNotFoundError:
+            print(f"[compare] skipping '{run_name}' (no metrics.json yet)")
+            continue
         labels.append(label)
         values.append(m.get(metric, float("nan")))
 

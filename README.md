@@ -92,6 +92,23 @@ Every major step and experimental run writes to `results/reports/<run>/`: the fr
 figures under `results/figures/`. All figures are produced in code and regenerable from
 saved results.
 
+### Analysis & next direction (2D Dyck)
+
+The Stage-1 CA hypothesis was **rejected** (every k-DYCK warm-up beats every CA variant; some CA
+variants fall *below* random init). Three analysis/design reports work out why and what to try next:
+
+- [`results/reports/ca-failure-analysis/report.md`](results/reports/ca-failure-analysis/report.md) —
+  why CA underperforms k-DYCK (results table + five mechanism-level hypotheses tied to the code).
+- [`results/reports/dyck2d-pretraining-design/report.md`](results/reports/dyck2d-pretraining-design/report.md)
+  — explains *"Two-dimensional Dyck words"* (`docs/2307.16522.pdf`) and designs intrinsically-2D warm-up
+  tasks (`dyck2d_crossword`/DC_k, `dyck2d_boxes`/DW_k) framed as controlled tests of that diagnosis.
+- [`results/reports/dyck2d-investigation-summary/report.md`](results/reports/dyck2d-investigation-summary/report.md)
+  — consolidated work-log and recommended next steps for the GPU stage.
+- [`results/reports/ca-2d-spacetime/report.md`](results/reports/ca-2d-spacetime/report.md) — a direct test
+  of H3: CA warm-up configs that **retain the 2-D spacetime structure** (2-D positional code, 2-D block
+  masking, next-state objectives, a genuinely-2-D Game-of-Life operator), with controls to separate real
+  operator transfer from a generic conv-locality prior. Run with `scripts/run_ca_2d_experiments.sh`.
+
 ## Complete method comparison (additive + substitutive)
 
 Reproduces the paper's two analyses across all warm-up methods (random / CA / k-Dyck /

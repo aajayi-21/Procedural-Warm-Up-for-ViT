@@ -26,7 +26,11 @@ def build(results_dir: str, runs: list[tuple[str, str]], out_name: str, title: s
     rows = []
     best_label, best_val = None, -1.0
     for run_name, label in runs:
-        m = load_metrics(results_dir, run_name)
+        try:
+            m = load_metrics(results_dir, run_name)
+        except FileNotFoundError:
+            print(f"[compare] skipping '{run_name}' (no metrics.json yet)")
+            continue
         v = m.get("best_top1", float("nan"))
         rows.append((label, run_name, v, m.get("dataset", "?")))
         if v > best_val:

@@ -1,0 +1,33 @@
+# MULTI-STEP next-state + 2-D positions. forward_rows=7 masks the last 7 time rows: predict
+# the future TRAJECTORY (7 successive states) from the past 7 — iterated rule application, now
+# with the 2-D positional code. sim_width=14 (no crop) + boundary=zero make the trajectory
+# self-contained so every masked future cell is well-posed (and sincos2d is exactly correct).
+seed: 42
+run_name: ca-rule110-forward-2dpos
+results_dir: results
+
+model: { name: vit_tiny_patch16_224, embed_dim: 192, pos_embed: sincos2d }
+grid: { H: 14, W: 14 }
+vocab: { K: 4, PAD_ID: 0, MASK_ID: 1 }
+
+data:
+  source: ca
+
+ca:
+  rule: 110
+  dim: 1
+  sim_width: 14                  # = cell_W: self-contained, well-posed forward target
+  burn_in: 32
+  boundary: zero                 # non-periodic both axes => sincos2d exactly correct
+  init_density: 0.5
+  tokenize: { mode: binary, block_size: 7 }
+
+masking: { mode: forward, mask_ratio: 0.5, forward_rows: 7 }   # predict the last 7 time rows
+
+dataset: { n_samples: 100000, batch_size: 256, num_workers: 16, pin_memory: true }
+training: { steps: 15000, device: cuda }
+optimizer: { lr: 0.002, weight_decay: 0.05, betas: [0.9, 0.999] }
+scheduler: { enabled: true, warmup_steps: 1000, warmup_start_lr: 1.0e-6, min_lr: 1.0e-5 }
+checkpoint: { out_dir: checkpoints, save_steps: [15000] }
+wandb: { enabled: false, project: procedural-warmup-ca }
+logging: { print_freq: 50, progress: true, figure_every: 1000 }

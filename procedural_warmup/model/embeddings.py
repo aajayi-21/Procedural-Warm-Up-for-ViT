@@ -8,6 +8,8 @@ image training.
 
 from __future__ import annotations
 
+import math
+
 import torch
 import torch.nn as nn
 
@@ -44,6 +46,35 @@ class FrozenPositionalEmbedding(nn.Module):
         super().__init__()
         vecs = torch.randn(N, d)
         vecs = vecs / vecs.norm(dim=1, keepdim=True) * scale
+        self.emb = nn.Embedding(N, d)
+        with torch.no_grad():
+            self.emb.weight.copy_(vecs)
+        self.emb.weight.requires_grad_(False)
+
+    def forward(self, idx: torch.Tensor) -> torch.Tensor:
+        return self.emb(idx)
+
+
+class Frozen1DRingPositionalEmbedding(nn.Module):
+    """Fixed sin/cos positional embedding over an ``N``-cell *ring* (periodic), frozen.
+
+    Each position ``i`` is encoded with harmonics of the ring angle ``2*pi*i/N`` (a Fourier
+    basis on the cycle), so adjacency — including the ``i = N-1 <-> i = 0`` wrap — is exposed.
+    This matches the **periodic 1-D boundary** of the ``ca_step`` board (an N-cell ECA ring),
+    for which the 2-D ``(p//W, p%W)`` encoding is wrong (it fragments the ring every W cells).
+    Like the other positional embeddings it is frozen and stripped before image transfer, so
+    it only shapes what the blocks learn. Use via ``model.pos_embed: sincos1d``.
+    """
+
+    def __init__(self, N: int, d: int, scale: float = 0.02) -> None:
+        super().__init__()
+        if d % 2 != 0:
+            raise ValueError(f"1D ring sin/cos needs even d, got {d}")
+        idx = torch.arange(N).float()
+        harmonics = torch.arange(1, d // 2 + 1).float()  # (d/2,) integer harmonics => periodic in N
+        ang = (2.0 * math.pi / N) * idx[:, None] * harmonics[None, :]  # (N, d/2)
+        vecs = torch.cat([ang.sin(), ang.cos()], dim=1)  # (N, d)
+        vecs = vecs / vecs.norm(dim=1, keepdim=True) * scale  # match the random-encoding scale
         self.emb = nn.Embedding(N, d)
         with torch.no_grad():
             self.emb.weight.copy_(vecs)

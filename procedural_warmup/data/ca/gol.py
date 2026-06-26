@@ -49,6 +49,56 @@ def simulate_life(
     return grid
 
 
+class GolStepDataset(ProceduralDataset):
+    """One Game-of-Life step on an i.i.d. 2-D board; yields ``[x | y]`` (length ``2N``).
+
+    The genuinely-2-D analogue of :class:`~procedural_warmup.data.ca.iid_step.CaStepDataset`:
+    predict the *entire next Life state* from the current state. The Moore-8 neighborhood is
+    2-D-local, so the ``sincos2d`` frozen positional embedding exposes the grid adjacency the
+    operator needs — a test of "does an entire-next-state objective transfer when the operator
+    is genuinely 2-D AND its geometry is exposed" (failure Hypothesis 3).
+
+    Caveat: the board is *toroidal* (``life_step`` wraps via ``np.roll``) but ``sincos2d`` is
+    non-periodic, so the wrap-around neighbours of the ~27% border cells are NOT encoded as
+    adjacent (a doubly-periodic code aliases badly on a 14-grid, unlike the 196-ring ``sincos1d``
+    used for ``ca_step``, so it is not worth building). This is *conservative*: it makes the true
+    operator slightly harder to learn at the border (risking a false negative), never a false
+    positive; and it cancels in the true-minus-shuffled gap (both arms share the same code).
+
+    ``y = life_step(x)`` for ``mode="true"``; ``y = life_step(z)`` for an unrelated board ``z``
+    at the same density for ``mode="shuffled"`` (the operator-vs-marginal control: ``true``
+    beating ``shuffled`` downstream is the operator-learning signal). Density is sampled per
+    example from ``cfg.ca_step.densities`` so the target marginal is not a single fixed bias.
+    Pairs with :class:`~procedural_warmup.data.ca.iid_step.TransductionMasking` (full mask).
+    """
+
+    def __init__(self, cfg) -> None:
+        self.cfg = cfg
+        self.H, self.W = cfg.grid.H, cfg.grid.W
+        self.N = self.H * self.W
+        self.densities = list(cfg.ca_step.densities)
+        self.mode = str(cfg.ca_step.mode).lower()  # reuse ca_step.mode for the true|shuffled control
+        if self.mode not in ("true", "shuffled"):
+            raise ValueError(f"ca_step.mode must be 'true'|'shuffled', got {self.mode!r}")
+        if cfg.vocab.K < tok.vocab_size_binary():
+            raise ValueError(f"vocab.K={cfg.vocab.K} < {tok.vocab_size_binary()} for binary CA")
+
+    def __len__(self) -> int:
+        return self.cfg.dataset.n_samples
+
+    def __getitem__(self, _idx: int) -> torch.LongTensor:
+        rng = np.random.default_rng()
+        p = float(rng.choice(self.densities))
+        x = (rng.random((self.H, self.W)) < p).astype(np.uint8)
+        # "true": evolve the input itself; "shuffled": evolve an unrelated board at same density.
+        src = x if self.mode == "true" else (rng.random((self.H, self.W)) < p).astype(np.uint8)
+        y = life_step(src)
+        pair = np.concatenate(
+            [tok.binary_tokens(x).reshape(self.N), tok.binary_tokens(y).reshape(self.N)]
+        )
+        return torch.tensor(pair, dtype=torch.long)
+
+
 class GameOfLifeGrid(ProceduralDataset):
     """Random Game-of-Life snapshots tokenized to a length-N grid (binary tokens)."""
 

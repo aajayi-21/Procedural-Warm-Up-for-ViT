@@ -1,0 +1,33 @@
+# 2-D BLOCK MASKING + 2-D positions. Masks contiguous 4x4 (time x space) rectangles of the
+# grid instead of i.i.d. cells, so a masked cell's neighbours are usually masked too and
+# cannot be copied — reconstruction needs genuine 2-D integration over the rule. The most
+# "2-D-native" CA objective; binary tokenization isolates it from the vocabulary lever.
+seed: 42
+run_name: ca-rule110-block2d
+results_dir: results
+
+model: { name: vit_tiny_patch16_224, embed_dim: 192, pos_embed: sincos2d }
+grid: { H: 14, W: 14 }
+vocab: { K: 4, PAD_ID: 0, MASK_ID: 1 }
+
+data:
+  source: ca
+
+ca:
+  rule: 110
+  dim: 1
+  sim_width: 64
+  burn_in: 32
+  boundary: periodic
+  init_density: 0.5
+  tokenize: { mode: binary, block_size: 7 }
+
+masking: { mode: block2d, mask_ratio: 0.5, block_h: 4, block_w: 4 }
+
+dataset: { n_samples: 100000, batch_size: 256, num_workers: 16, pin_memory: true }
+training: { steps: 15000, device: cuda }
+optimizer: { lr: 0.002, weight_decay: 0.05, betas: [0.9, 0.999] }
+scheduler: { enabled: true, warmup_steps: 1000, warmup_start_lr: 1.0e-6, min_lr: 1.0e-5 }
+checkpoint: { out_dir: checkpoints, save_steps: [15000] }
+wandb: { enabled: false, project: procedural-warmup-ca }
+logging: { print_freq: 50, progress: true, figure_every: 1000 }
