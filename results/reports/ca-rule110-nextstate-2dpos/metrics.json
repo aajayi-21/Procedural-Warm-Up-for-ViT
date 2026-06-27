@@ -1,0 +1,13 @@
+{
+  "run_name": "ca-rule110-nextstate-2dpos",
+  "source": "ca",
+  "rule": 110,
+  "masking": {
+    "mode": "forward",
+    "ratio": 0.5
+  },
+  "steps": 15000,
+  "final_avg_loss": 0.07259565749727707,
+  "final_avg_acc": 0.9661843217536807,
+  "checkpoint": "checkpoints\\ca-rule110-nextstate-2dpos\\ckpt_step_015000.pt"
+}

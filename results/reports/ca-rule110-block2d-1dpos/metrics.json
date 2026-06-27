@@ -1,0 +1,13 @@
+{
+  "run_name": "ca-rule110-block2d-1dpos",
+  "source": "ca",
+  "rule": 110,
+  "masking": {
+    "mode": "block2d",
+    "ratio": 0.5
+  },
+  "steps": 15000,
+  "final_avg_loss": 0.16320164538174867,
+  "final_avg_acc": 0.9159805051863193,
+  "checkpoint": "checkpoints\\ca-rule110-block2d-1dpos\\ckpt_step_015000.pt"
+}

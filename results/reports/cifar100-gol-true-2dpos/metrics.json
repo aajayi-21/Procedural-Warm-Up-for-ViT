@@ -1,0 +1,23 @@
+{
+  "run_name": "cifar100-gol-true-2dpos",
+  "dataset": "CIFAR100",
+  "init_checkpoint": "checkpoints/gol-step-true-2dpos/ckpt_step_015000_stripped.pt",
+  "train_fraction": 1.0,
+  "epochs": 300,
+  "best_top1": 66.54000091552734,
+  "final_top1": 66.37999725341797,
+  "final_top5": 89.56999969482422,
+  "init_summary": {
+    "loaded": 146,
+    "missing": [
+      "cls_token",
+      "pos_embed",
+      "patch_embed.proj.weight",
+      "patch_embed.proj.bias",
+      "head.weight",
+      "head.bias"
+    ],
+    "unexpected": []
+  },
+  "finished": "2026-06-27T12:52:08Z"
+}

@@ -1,0 +1,95 @@
+{
+  "comparison": [
+    {
+      "label": "Random",
+      "run": "cifar100-random",
+      "best_top1": 70.0199966430664,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "k-Dyck",
+      "run": "cifar100-dyck",
+      "best_top1": 72.63999938964844,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA binary 1D",
+      "run": "cifar100-rule110",
+      "best_top1": 68.86000061035156,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA binary 2D",
+      "run": "cifar100-2dpos",
+      "best_top1": 65.3499984741211,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA block2d 1D",
+      "run": "cifar100-block2d-1dpos",
+      "best_top1": 69.16999816894531,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA block2d 2D",
+      "run": "cifar100-block2d",
+      "best_top1": 69.41999816894531,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA forward-deep 2D",
+      "run": "cifar100-forward-deep-2dpos",
+      "best_top1": 67.23999786376953,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA next-state 2D",
+      "run": "cifar100-nextstate-2dpos",
+      "best_top1": 66.16999816894531,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA block 1D",
+      "run": "cifar100-block",
+      "best_top1": 71.41999816894531,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA block 2D",
+      "run": "cifar100-block-2dpos",
+      "best_top1": 29.75,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA hard 1D",
+      "run": "cifar100-hard",
+      "best_top1": 71.86000061035156,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA hard 2D",
+      "run": "cifar100-hard-2dpos",
+      "best_top1": 71.36000061035156,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA iid-true 1D",
+      "run": "cifar100-iid-true",
+      "best_top1": 66.80999755859375,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "CA iid-true ring",
+      "run": "cifar100-iid-true-1dpos",
+      "best_top1": 66.33000183105469,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "GoL-step 2D",
+      "run": "cifar100-gol-true-2dpos",
+      "best_top1": 66.54000091552734,
+      "dataset": "CIFAR100"
+    }
+  ],
+  "winner": "k-Dyck"
+}
