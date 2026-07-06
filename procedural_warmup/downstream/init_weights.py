@@ -8,6 +8,7 @@ Loading is non-strict and the missing/unexpected keys are reported so transfer i
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 import torch
 
@@ -76,7 +77,7 @@ def apply_init_spec(model: torch.nn.Module, specs: list[dict], seed: int = 0) ->
         blocks = _parse_blocks(spec.get("blocks", "all"), depth)
         comp = spec.get("components", "all")
         shuffle = bool(spec.get("shuffle", False))
-        tag = spec.get("tag") or spec["ckpt"].split("/")[-2]
+        tag = spec.get("tag") or Path(spec["ckpt"]).parent.name  # path-separator safe
         for key, val in state.items():
             m = _BLOCK_RE.match(key)
             if m is None:

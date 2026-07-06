@@ -1,0 +1,32 @@
+# H6 arm A (treatment): DW_32 well-nested 2D Dyck, native 14x14 grid, sincos2d
+# positions, determinacy-audited corner-close-only masking. K = 4*32 + 2 = 130 matches
+# the 1D k-Dyck vocabulary exactly (design doc §4, H6).
+#
+# LR guard (the cifar100-block-2dpos precedent for K=130 + sincos2d at lr 2e-3): at
+# step ~2000, masked acc must exceed ~0.10 (unigram floor ~0.03 for 32-way d-prediction)
+# and loss must be below ln(32) ~ 3.47 — else kill and rerun with optimizer.lr 1.0e-3.
+seed: 42
+run_name: dw32-vit-t
+results_dir: results
+
+model: { name: vit_tiny_patch16_224, embed_dim: 192, pos_embed: sincos2d }
+grid: { H: 14, W: 14 }
+vocab: { K: 130, PAD_ID: 0, MASK_ID: 1 }   # 2 specials + 4k corner symbols (k=32)
+
+data:
+  source: dyck2d
+
+dyck2d: { k: 32, p_acc: 0.6, open_prob: 0.6, min_match_distance: 2 }
+
+masking: { mode: corner_close_only, mask_ratio: 0.5 }  # dyck2d always masks eligible d-corners; mode string is documentation
+
+dataset: { n_samples: 100000, batch_size: 256, num_workers: 16, pin_memory: true }  # generation is CPU-bound (~12k samples/s/core)
+training: { steps: 15000, device: cuda }
+optimizer: { lr: 0.002, weight_decay: 0.05, betas: [0.9, 0.999] }
+scheduler: { enabled: true, warmup_steps: 1000, warmup_start_lr: 1.0e-6, min_lr: 1.0e-5 }
+checkpoint:
+  out_dir: checkpoints
+  save_steps: [15000]
+  probe_steps: [0, 250, 500, 1000, 2000, 4000, 6000, 8000, 10000, 12500, 15000]
+wandb: { enabled: false, project: procedural-warmup-ca }
+logging: { print_freq: 50 }

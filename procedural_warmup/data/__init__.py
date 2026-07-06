@@ -48,6 +48,7 @@ def available_sources() -> list[str]:
 # Import source packages so their @register_source builders run. Keep these at the bottom
 # to avoid circular imports (the submodules import from this module).
 from procedural_warmup.data import dyck as _dyck  # noqa: E402,F401
+from procedural_warmup.data import dyck2d as _dyck2d  # noqa: E402,F401
 from procedural_warmup.data import dyck_shuffle as _dyck_shuffle  # noqa: E402,F401
 from procedural_warmup.data import ww as _ww  # noqa: E402,F401
 from procedural_warmup.data import ca as _ca  # noqa: E402,F401

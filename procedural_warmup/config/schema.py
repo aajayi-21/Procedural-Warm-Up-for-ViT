@@ -28,8 +28,9 @@ class ModelConfig:
     embed_dim: int = 192
     num_classes: int = 0  # warm-up has no classifier head; the MLM head is separate
     drop_path_rate: float = 0.0
-    # frozen warm-up positional encoding: "random" | "sincos2d" (time x space grid) |
-    # "sincos1d" (periodic N-cell ring, correct for the ca_step board).
+    # frozen warm-up positional encoding: "random" | "sincos2d" (H x W grid, standard
+    # MAE base-10000 band) | "sincos2d_tuned" (grid-matched frequency band — H6 extra
+    # screening arm) | "sincos1d" (periodic N-cell ring, correct for the ca_step board).
     pos_embed: str = "random"
 
 
@@ -65,6 +66,24 @@ class WWConfig:
     """WW regular-language generator (a random substring concatenated with its copy)."""
 
     n_symbols: int = 64  # alphabet size; vocab.K must be >= 2 + n_symbols
+
+
+@dataclass
+class Dyck2DConfig:
+    """DW_k well-nested 2D Dyck sampler (``dyck2d`` / ``dyck2d_shuffle`` sources).
+
+    ``k`` quadruple types give 4k corner symbols (ids [2, 2+4k)); vocab.K must be
+    >= 4k + 2 (k = 32 -> K = 130, the 1D k-Dyck vocabulary). ``p_acc`` is the
+    accretion-vs-guillotine-split probability (nesting-depth knob, the 2D analog of
+    ``open_prob``); ``open_prob`` shapes the border Dyck words. A d-corner is maskable
+    iff ``max(row_span, col_span) >= min_match_distance`` (spans are odd, so the
+    default 2 excludes exactly the fully-local 2x2 rectangles; <= 1 disables).
+    """
+
+    k: int = 32
+    p_acc: float = 0.6
+    open_prob: float = 0.6
+    min_match_distance: int = 2
 
 
 @dataclass
@@ -175,6 +194,11 @@ class SchedulerConfig:
 class CheckpointConfig:
     out_dir: str = "checkpoints"
     save_steps: list = field(default_factory=lambda: [15_000])
+    # Weight-probe snapshots (analysis/weight_probe.py): model_state-only saves at these
+    # steps as probe_step_XXXXXX.pt (step 0 = init, saved before training starts).
+    # Distinct filenames keep run-script skip checks and process.py untouched; ~22 MB
+    # each for ViT-T vs ~66 MB for a full checkpoint. Empty list (default) = disabled.
+    probe_steps: list = field(default_factory=list)
 
 
 @dataclass
@@ -218,6 +242,7 @@ class RootConfig:
     vocab: VocabConfig = field(default_factory=VocabConfig)
     data: DataConfig = field(default_factory=DataConfig)
     dyck: DyckConfig = field(default_factory=DyckConfig)
+    dyck2d: Dyck2DConfig = field(default_factory=Dyck2DConfig)
     ww: WWConfig = field(default_factory=WWConfig)
     spatial_dyck: SpatialDyckConfig = field(default_factory=SpatialDyckConfig)
     ca: CAConfig = field(default_factory=CAConfig)

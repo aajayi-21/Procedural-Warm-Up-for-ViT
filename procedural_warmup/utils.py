@@ -101,13 +101,19 @@ class RunDir:
         figures = Path(results_dir) / "figures"
         root.mkdir(parents=True, exist_ok=True)
         figures.mkdir(parents=True, exist_ok=True)
+        # A re-run (e.g. after an aborted warm-up) must not append rows to the previous
+        # attempt's CSV; rotate it aside for forensics instead.
+        log = root / "log.csv"
+        if log.exists():
+            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+            log.rename(root / f"log.{stamp}.csv.bak")
         return cls(root=root, figures_dir=figures)
 
     # ---- config ----
     def save_config(self, cfg_dict: dict) -> None:
         import yaml
 
-        with open(self.root / "config.yaml", "w") as f:
+        with open(self.root / "config.yaml", "w", encoding="utf-8") as f:
             yaml.safe_dump(cfg_dict, f, sort_keys=False)
 
     # ---- streaming log ----
@@ -124,7 +130,7 @@ class RunDir:
 
     # ---- final metrics ----
     def save_metrics(self, metrics: dict) -> None:
-        with open(self.root / "metrics.json", "w") as f:
+        with open(self.root / "metrics.json", "w", encoding="utf-8") as f:
             json.dump(metrics, f, indent=2)
 
     # ---- report ----
@@ -140,7 +146,8 @@ class RunDir:
             for fig in figures:
                 rel = os.path.relpath(fig, self.root)
                 lines += [f"![{Path(fig).stem}]({rel})", ""]
-        (self.root / "report.md").write_text("\n".join(lines))
+        # UTF-8 explicitly: reports contain non-cp1252 glyphs and must write on Windows.
+        (self.root / "report.md").write_text("\n".join(lines), encoding="utf-8")
 
 
 def load_metrics(results_dir: str, run_name: str) -> dict:

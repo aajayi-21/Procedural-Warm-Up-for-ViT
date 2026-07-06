@@ -67,7 +67,7 @@ def test_build_report_additive_and_substitutive(tmp_path):
 
     report = build_report(str(results), runs, "CIFAR100", out_name="cmp")
     assert report.exists()
-    text = report.read_text()
+    text = report.read_text(encoding="utf-8")
     assert "Additive" in text and "Substitutive" in text
     assert "Δ vs random" in text
     # ca@50% (68.5) >= random@100% (68.0) -> reports saving 50%

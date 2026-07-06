@@ -1,0 +1,29 @@
+# Phase-0 reproduction of the canonical k-Dyck warm-up (H6 arm B + probe reference).
+# Identical to dyck-vit-t.yaml except run_name and the weight-probe snapshot cadence;
+# the downstream number must land within ±0.4 of 72.64 before any DW compute (P1).
+seed: 42
+run_name: dyck-repro
+results_dir: results
+
+model: { name: vit_tiny_patch16_224, embed_dim: 192 }
+grid: { H: 14, W: 14 }
+vocab: { K: 130, PAD_ID: 0, MASK_ID: 1 }   # 2 specials + 64 open + 64 close
+
+data:
+  source: dyck
+
+dyck: { k_open: 64, k_close: 64, open_prob: 0.6, min_pairs: 1 }
+
+masking: { mode: random, mask_ratio: 0.5 }  # Dyck uses close-only masking; mode is ignored
+
+dataset: { n_samples: 100000, batch_size: 256, num_workers: 16, pin_memory: true }  # Dyck gen is CPU-bound; use more of the 32 cores
+training: { steps: 15000, device: cuda }
+optimizer: { lr: 0.002, weight_decay: 0.05, betas: [0.9, 0.999] }
+scheduler: { enabled: true, warmup_steps: 1000, warmup_start_lr: 1.0e-6, min_lr: 1.0e-5 }
+checkpoint:
+  out_dir: checkpoints
+  save_steps: [15000]
+  # Weight-probe snapshots (~22 MB each): analysis/weight_probe.py reads these.
+  probe_steps: [0, 250, 500, 1000, 2000, 4000, 6000, 8000, 10000, 12500, 15000]
+wandb: { enabled: false, project: procedural-warmup-ca }
+logging: { print_freq: 50 }

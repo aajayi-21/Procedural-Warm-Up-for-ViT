@@ -10,6 +10,7 @@ from procedural_warmup.model.embeddings import (
     Frozen2DSinCosPositionalEmbedding,
     FrozenPositionalEmbedding,
     FrozenTokenEmbedding,
+    FrozenTuned2DSinCosPositionalEmbedding,
 )
 from procedural_warmup.model.wrapper import ProceduralViT
 
@@ -39,12 +40,16 @@ def build_model(cfg) -> tuple[ProceduralViT, nn.Linear]:
     pos_kind = getattr(cfg.model, "pos_embed", "random")
     if pos_kind == "sincos2d":
         pos = Frozen2DSinCosPositionalEmbedding(N, embed_dim, cfg.grid.H, cfg.grid.W)
+    elif pos_kind == "sincos2d_tuned":
+        pos = FrozenTuned2DSinCosPositionalEmbedding(N, embed_dim, cfg.grid.H, cfg.grid.W)
     elif pos_kind == "sincos1d":
         pos = Frozen1DRingPositionalEmbedding(N, embed_dim)
     elif pos_kind == "random":
         pos = FrozenPositionalEmbedding(N, embed_dim)
     else:
-        raise ValueError(f"model.pos_embed must be random|sincos2d|sincos1d, got {pos_kind!r}")
+        raise ValueError(
+            f"model.pos_embed must be random|sincos2d|sincos2d_tuned|sincos1d, got {pos_kind!r}"
+        )
     model = ProceduralViT(backbone, tok, pos, cfg.grid.H, cfg.grid.W)
     mlm_head = nn.Linear(embed_dim, cfg.vocab.K)
     return model, mlm_head

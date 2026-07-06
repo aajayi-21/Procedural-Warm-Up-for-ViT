@@ -22,6 +22,7 @@ from procedural_warmup.warmup.optim import make_optimizer, make_scheduler
 class CheckpointManager:
     def __init__(self, cfg) -> None:
         self.save_steps = set(cfg.checkpoint.save_steps)
+        self.probe_steps = set(getattr(cfg.checkpoint, "probe_steps", []))
         self.out_dir = Path(cfg.checkpoint.out_dir) / cfg.run_name
         self.out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -29,6 +30,14 @@ class CheckpointManager:
         if step in self.save_steps:
             path = self.out_dir / f"ckpt_step_{step:06d}.pt"
             torch.save(payload, path)
+            return path
+        return None
+
+    def maybe_save_probe(self, step: int, model_state: dict) -> Path | None:
+        """Model-state-only snapshot for the weight-over-time probe (no optimizer/head)."""
+        if step in self.probe_steps:
+            path = self.out_dir / f"probe_step_{step:06d}.pt"
+            torch.save({"step": step, "model_state": model_state}, path)
             return path
         return None
 
@@ -101,6 +110,8 @@ class Trainer:
         self.mlm_head.train()
         loss_m, acc_m = AverageMeter(), AverageMeter()
         last_ckpt: Path | None = None
+        # Step-0 probe snapshot: the init state is the drift reference (W_0).
+        self.ckpts.maybe_save_probe(0, self.model.state_dict())
         it = iter(self.loader)
         progress = self.cfg.logging.progress
         figure_every = self.cfg.logging.figure_every
@@ -115,20 +126,22 @@ class Trainer:
                 it = iter(self.loader)
                 batch = next(it)
             result = self._step(batch)
-            if result is None:
-                continue
-            loss, acc, lr = result
-            loss_m.update(loss)
-            acc_m.update(acc)
+            # A zero-masked-token batch skips the update but must NOT skip the
+            # checkpoint/probe saves below (a snapshot of unchanged weights is safe;
+            # a silently missing scheduled snapshot is not).
+            if result is not None:
+                loss, acc, lr = result
+                loss_m.update(loss)
+                acc_m.update(acc)
 
-            if step % self.cfg.logging.print_freq == 0:
-                self.run_dir.log_row({"step": step, "loss": loss, "acc": acc, "lr": lr})
-                if progress:
-                    pbar.set_postfix(loss=f"{loss:.3f}", acc=f"{acc:.3f}", lr=f"{lr:.1e}")
-                else:
-                    print(f"step {step:06d} | loss {loss:.4f} | acc {acc:.3f} | lr {lr:.2e}")
-                if self.logger is not None:
-                    self.logger.log(step, loss, acc, lr)
+                if step % self.cfg.logging.print_freq == 0:
+                    self.run_dir.log_row({"step": step, "loss": loss, "acc": acc, "lr": lr})
+                    if progress:
+                        pbar.set_postfix(loss=f"{loss:.3f}", acc=f"{acc:.3f}", lr=f"{lr:.1e}")
+                    else:
+                        print(f"step {step:06d} | loss {loss:.4f} | acc {acc:.3f} | lr {lr:.2e}")
+                    if self.logger is not None:
+                        self.logger.log(step, loss, acc, lr)
 
             # Refresh the live training-curve figure so progress is visible mid-run.
             if figure_every > 0 and step % figure_every == 0:
@@ -148,8 +161,14 @@ class Trainer:
             if ckpt is not None:
                 (tqdm.write if progress else print)(f"[ckpt] saved {ckpt}")
             last_ckpt = ckpt or last_ckpt
+            self.ckpts.maybe_save_probe(step, self.model.state_dict())
 
         pbar.close()
+        if loss_m.count == 0:
+            raise RuntimeError(
+                f"all {self.cfg.training.steps} steps produced zero maskable targets — "
+                "check the masking eligibility (e.g. dyck2d.min_match_distance)"
+            )
         self._finalize(loss_m.avg, acc_m.avg, last_ckpt)
         return last_ckpt
 
