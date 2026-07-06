@@ -114,7 +114,8 @@ if [[ "${RUN_DENSE:-0}" == "1" ]]; then
   downstream "${TAG}-dw32-dense" "checkpoints/dw32-dense-vit-t/$STEP"
 fi
 
-echo "== comparison figure =="
+echo "== comparison figures =="
+# Full screen: every arm on one chart.
 python -m procedural_warmup.analysis.compare \
   --out "dw32_screen_${TAG}" \
   --title "${DATASET} top-1: DW_32 2D Dyck screen (H6)" \
@@ -123,7 +124,25 @@ python -m procedural_warmup.analysis.compare \
     "${TAG}-dyck-repro:k-Dyck 1D" \
     "${TAG}-dw32:DW32 2D" \
     "${TAG}-dw32-shuffle:DW32 shuffle" \
-    "${TAG}-dw32-tuned:DW32 2D tuned"
+    "${TAG}-dw32-tuned:DW32 2D tuned" \
+  --summary "H6 screen (1 seed; differences under ~0.7 pts are noise — the in-repo Dyck seed spread is 0.67). Gate to Phase 2: any DW arm > 71.0 (design doc §6)."
+
+# Head-to-head: 1D k-Dyck (canonical well-nested 1D Dyck, context-free) vs DW_32 (its
+# well-nested 2D counterpart, provably beyond the 2D-'regular' tiling-recognizable
+# class — paper Thm 1). Random = floor; DW32-shuffle = the operator control that makes
+# the two-source comparison interpretable (the CA lesson). Overlays the warm-up
+# dynamics of both sources; note the different masked-accuracy chance floors.
+python -m procedural_warmup.analysis.compare \
+  --out "dw32_vs_kdyck_${TAG}" \
+  --title "${DATASET} top-1: 1D k-Dyck vs 2D DW_32 (H6 head-to-head)" \
+  --runs \
+    "${TAG}-random-repro:Random" \
+    "${TAG}-dyck-repro:k-Dyck 1D" \
+    "${TAG}-dw32:DW32 2D" \
+    "${TAG}-dw32-shuffle:DW32 shuffle" \
+  --warmup-runs "dyck-repro:k-Dyck 1D (64-way closers)" "dw32-vit-t:DW32 2D (32-way d-corners)" \
+  --warmup-note "masked-accuracy chance floors differ: ~1/64 (k-Dyck closers) vs ~1/32 (DW d-corners); supervision density ~25% vs ~8.8% of tokens" \
+  --summary "H6 decision bands (design doc §4, 3-seed verdicts required before claims): SUCCESS if DW32 >= 72.0 and DW32 - shuffle >= 1.0 (the 2D constraint itself transfers -> proceed to the DN/DQ/DC hierarchy, H8). PARTIAL if 70.7 <= DW32 < 72.0 (2D Dyck transfers something but presentation or supervision density costs -> H7 + RUN_DENSE=1 arm next). FAILURE if DW32 <= 70.7 or DW32 ~= shuffle (the CA story on a second source class -> H9b projection scramble before any further 2D investment). In-repo anchors: k-Dyck 72.64, random 70.02."
 
 # ---------------------------------------------------------------------------------
 # Phase 2 — 3-seed verdicts (gate: any DW arm > 71.0 on the screen; design doc §6).
@@ -147,7 +166,10 @@ if [[ "${RUN_SEEDS:-0}" == "1" ]]; then
   done
 fi
 
-echo "Done. Screen report: results/reports/dw32_screen_${TAG}/report.md"
+echo "Done."
+echo "  Head-to-head:  results/reports/dw32_vs_kdyck_${TAG}/report.md"
+echo "  Full screen:   results/reports/dw32_screen_${TAG}/report.md"
+echo "  Probe overlay: results/reports/dw32-probe-compare/report.md"
 echo "Next: author results/reports/dw32-screen/report.md (verdict template:"
 echo "results/reports/ca-2d-spacetime-verdict/report.md) with the H6 bands from"
 echo "docs/2d-dyck-experiment-design.md §4."

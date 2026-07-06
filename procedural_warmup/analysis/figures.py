@@ -61,6 +61,52 @@ def plot_warmup_curves(results_dir: str, run_name: str, out_dir) -> Optional[Pat
     return out
 
 
+def plot_warmup_comparison(
+    results_dir: str,
+    runs: list[tuple[str, str]],
+    out_dir,
+    title: str = "Warm-up curves by source",
+    note: str = "",
+    filename: str = "warmup_comparison.png",
+) -> Optional[Path]:
+    """Overlay several warm-up runs' loss and masked-accuracy curves (from log.csv).
+
+    ``runs`` is ``(run_name, label)`` pairs; runs without a ``log.csv`` yet are skipped
+    with a warning. Masked-accuracy floors differ across sources (e.g. 1/64 for k-Dyck
+    closers vs 1/32 for DW d-corners) — pass ``note`` to state them on the figure.
+    """
+    curves = []
+    for run_name, label in runs:
+        try:
+            rows = read_csv_log(results_dir, run_name)
+        except FileNotFoundError:
+            print(f"[compare] skipping warm-up '{run_name}' (no log.csv yet)")
+            continue
+        if rows:
+            curves.append((label, rows))
+    if not curves:
+        return None
+
+    fig, (ax_loss, ax_acc) = plt.subplots(1, 2, figsize=(11, 4))
+    for label, rows in curves:
+        steps = [r["step"] for r in rows]
+        ax_loss.plot(steps, [r["loss"] for r in rows], label=label, lw=1.2)
+        ax_acc.plot(steps, [r["acc"] for r in rows], label=label, lw=1.2)
+    ax_loss.set_xlabel("step")
+    ax_loss.set_ylabel("masked-token loss")
+    ax_loss.legend(fontsize=8)
+    ax_acc.set_xlabel("step")
+    ax_acc.set_ylabel("masked-token accuracy")
+    ax_acc.set_ylim(0, 1)
+    ax_acc.legend(fontsize=8)
+    fig.suptitle(title + (f"\n{note}" if note else ""), fontsize=11)
+    fig.tight_layout()
+    out = _ensure(out_dir) / filename
+    fig.savefig(out, dpi=130)
+    plt.close(fig)
+    return out
+
+
 def plot_downstream_curve(results_dir: str, run_name: str, out_dir) -> Optional[Path]:
     """Validation top-1/top-5 and train loss vs epoch, from a run's ``log.csv``."""
     try:
