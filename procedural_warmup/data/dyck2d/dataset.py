@@ -53,6 +53,12 @@ class Dyck2DGrid(ProceduralDataset):
         self.p_acc = cfg.dyck2d.p_acc
         self.open_prob = cfg.dyck2d.open_prob
         self.min_match_distance = cfg.dyck2d.min_match_distance
+        self.filter_mode = cfg.dyck2d.filter_mode
+        self.mask_roles = cfg.dyck2d.mask_roles
+        if self.filter_mode not in ("max", "min"):
+            raise ValueError(f"dyck2d.filter_mode must be 'max'|'min', got {self.filter_mode!r}")
+        if self.mask_roles not in ("d", "cd"):
+            raise ValueError(f"dyck2d.mask_roles must be 'd'|'cd', got {self.mask_roles!r}")
         needed = vocab_size(self.k)
         assert cfg.vocab.K >= needed, f"vocab.K={cfg.vocab.K} < needed={needed} for k={self.k}"
         assert self.H % 2 == 0 and self.W % 2 == 0, (
@@ -62,6 +68,10 @@ class Dyck2DGrid(ProceduralDataset):
     def __len__(self) -> int:
         return self.cfg.dataset.n_samples
 
+    def _rect_eligible(self, rect) -> bool:
+        agg = max if self.filter_mode == "max" else min
+        return agg(rect.row_span, rect.col_span) >= self.min_match_distance
+
     def _sample(self, rng: random.Random | None = None) -> tuple[np.ndarray, np.ndarray]:
         """One (ids_grid, eligibility_grid) pair as numpy arrays."""
         grid, rects = dw_picture(
@@ -69,8 +79,10 @@ class Dyck2DGrid(ProceduralDataset):
         )
         elig = np.zeros((self.H, self.W), dtype=np.int64)
         for rect in rects:
-            if max(rect.row_span, rect.col_span) >= self.min_match_distance:
+            if self._rect_eligible(rect):
                 elig[rect.d_pos] = 1
+                if self.mask_roles == "cd":
+                    elig[rect.r2, rect.c1] = 1  # the c (bottom-left) corner
         return grid, elig
 
     def __getitem__(self, _idx: int) -> torch.LongTensor:

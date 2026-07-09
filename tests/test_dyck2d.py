@@ -379,6 +379,112 @@ def test_registry_contract(base_cfg):
         assert isinstance(masking, MaskingStrategy)
 
 
+def test_strict_filter_mode(base_cfg):
+    """filter_mode=min: both partners of every eligible d are non-adjacent."""
+    cfg = _dyck2d_cfg(base_cfg, filter_mode="min")
+    ds = Dyck2DGrid(cfg)
+    for i in range(20):
+        sample = ds[i]
+        ids = sample[0].reshape(cfg.grid.H, cfg.grid.W).numpy()
+        elig = sample[1].reshape(cfg.grid.H, cfg.grid.W).numpy()
+        by_d = {r.d_pos: r for r in recover_rectangles(ids, cfg.dyck2d.k)}
+        for pos in map(tuple, np.argwhere(elig == 1)):
+            r = by_d[pos]
+            assert min(r.row_span, r.col_span) >= 2  # no adjacent partner on either axis
+    # The strict set is a strict subset of the default set on average.
+    n_strict = sum(int(ds[i][1].sum()) for i in range(20))
+    n_default = sum(int(Dyck2DGrid(_dyck2d_cfg(base_cfg, filter_mode="max"))[i][1].sum())
+                    for i in range(20))
+    assert 0 < n_strict < n_default
+
+
+def test_cd_masking_roles(base_cfg):
+    """mask_roles=cd: eligibility marks c and d corners; masking hides only those."""
+    cfg = _dyck2d_cfg(base_cfg, mask_roles="cd")
+    cfg.masking.mask_ratio = 1.0
+    ds, masking = build_source(cfg)
+    batch = torch.stack([ds[i] for i in range(8)])
+    masked, targets, mask = masking(batch)
+    assert torch.equal(mask, batch[:, 1].bool())  # exactly the eligible set at ratio 1.0
+    k = cfg.dyck2d.k
+    c_lo, d_hi = 2 + 2 * k, 2 + 4 * k
+    assert ((targets[mask] >= c_lo) & (targets[mask] < d_hi)).all()  # only c/d ids
+    # Both roles are actually present among the masked targets.
+    roles = (targets[mask] - 2) // k
+    assert set(roles.unique().tolist()) == {int(Role.C), int(Role.D)}
+    # Eligibility marks the c and d of each passing rect and nothing else.
+    ids = batch[0, 0].reshape(cfg.grid.H, cfg.grid.W).numpy()
+    elig = batch[0, 1].reshape(cfg.grid.H, cfg.grid.W).numpy()
+    expect = np.zeros_like(elig)
+    for r in recover_rectangles(ids, k):
+        if max(r.row_span, r.col_span) >= cfg.dyck2d.min_match_distance:
+            expect[r.d_pos] = 1
+            expect[r.r2, r.c1] = 1
+    assert np.array_equal(elig, expect)
+
+
+def test_closing_audit_exact_vs_brute_force():
+    """closing mode == policy-restricted brute force, incl. jointly-masked c+d pairs."""
+    rng = random.Random(11)
+    mask_rng = np.random.default_rng(11)
+    for size in [(4, 4), (6, 6)]:
+        for _ in range(10):
+            grid, rects = dw_picture(*size, k=2, rng=rng)
+            mask = np.zeros(size, dtype=bool)
+            planted = 0
+            for r in rects:
+                if planted >= 2:  # keep the brute-force pool (4^holes) tiny
+                    break
+                mask[r.d_pos] = True
+                mask[r.r2, r.c1] = True  # the row-mate c too: single-axis insufficient
+                planted += 1
+            report = audit_mask(grid, mask, 2, mode="closing")
+            assert report.ok, report.reasons
+            assert report.determinacy_rate == 1.0
+            assert (report.values[mask] == grid[mask]).all()
+            bf_forced, bf_vals = brute_force_forced(grid, mask, 2, restrict_roles="cd")
+            assert (report.forced == bf_forced).all()
+            assert (report.values[mask] == bf_vals[mask]).all()
+    # Policy violation: masking an opener (a or b) must not audit clean.
+    grid, rects = dw_picture(4, 4, 2, rng=rng)
+    for pos in [(rects[0].r1, rects[0].c1), (rects[0].r1, rects[0].c2)]:
+        mask = np.zeros((4, 4), dtype=bool)
+        mask[pos] = True
+        assert not audit_mask(grid, mask, 2, mode="closing").ok
+
+
+def test_invalid_filter_and_roles_raise():
+    from procedural_warmup.config import load_config
+
+    # Fresh config per case: _dyck2d_cfg mutates in place, so reusing one config
+    # would trip the first case's invalid filter_mode in every later case.
+    with pytest.raises(ValueError, match="filter_mode"):
+        Dyck2DGrid(_dyck2d_cfg(load_config(None), filter_mode="median"))
+    with pytest.raises(ValueError, match="mask_roles"):
+        Dyck2DGrid(_dyck2d_cfg(load_config(None), mask_roles="abcd"))
+    with pytest.raises(ValueError, match="mask_roles"):
+        CornerCloseOnlyMasking(_dyck2d_cfg(load_config(None), mask_roles="abcd"))
+
+
+@pytest.mark.parametrize("name", [
+    "dw32-vit-t", "dw32-shuffle-vit-t", "dw32-tuned-vit-t", "dw32-dense-vit-t",
+    "dw32-randpos-vit-t", "dw32-randpos-shuffle-vit-t", "dw32-smoke", "dyck-repro",
+    "dw32-randpos-strict-vit-t", "dw32-randpos-cd-vit-t", "dw32-randpos-hard-vit-t",
+])
+def test_experiment_configs_load_and_build(name):
+    """Every experiment YAML loads, satisfies the vocab bound, and builds its source."""
+    from procedural_warmup.config import load_config
+
+    cfg = load_config(f"procedural_warmup/config/files/{name}.yaml")
+    assert cfg.run_name == name
+    if cfg.data.source.startswith("dyck2d"):
+        assert cfg.vocab.K >= vocab_size(cfg.dyck2d.k)
+        assert cfg.model.pos_embed in ("random", "sincos2d", "sincos2d_tuned")
+    ds, masking = build_source(cfg)
+    assert isinstance(ds, ProceduralDataset)
+    assert isinstance(masking, MaskingStrategy)
+
+
 def test_trainer_smoke_dyck2d(base_cfg, tmp_path):
     """(B, 2, N) batches flow through Trainer -> model -> checkpoint -> strip."""
     import torch as _torch

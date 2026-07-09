@@ -1,0 +1,34 @@
+# Step-1 arm A (post-Tier-1; see results/reports/dw32-screen/report.md §5): STRICT
+# eligibility filter on the randpos base — min(row_span, col_span) >= 2, so BOTH
+# partners of every masked d are non-adjacent (kills the measured ~50% adjacent-partner
+# shortcut). Halves the eligible set (~17 rects), so mask_ratio 1.0 keeps supervision
+# at ~17 targets/sample, matching the base arm — one factor changes: target hardness.
+#
+# Pre-registered read: warm-up saturation (acc >= 0.99) must move well right of the
+# base arm's step 1150; the run script's saturation gate (>= 6000) decides whether the
+# downstream is spent. Transfer is read only if the gate passes.
+seed: 42
+run_name: dw32-randpos-strict-vit-t
+results_dir: results
+
+model: { name: vit_tiny_patch16_224, embed_dim: 192, pos_embed: random }
+grid: { H: 14, W: 14 }
+vocab: { K: 130, PAD_ID: 0, MASK_ID: 1 }
+
+data:
+  source: dyck2d
+
+dyck2d: { k: 32, p_acc: 0.6, open_prob: 0.6, min_match_distance: 2, filter_mode: min, mask_roles: d }
+
+masking: { mode: corner_close_only, mask_ratio: 1.0 }  # all strict-eligible d's
+
+dataset: { n_samples: 100000, batch_size: 256, num_workers: 16, pin_memory: true }
+training: { steps: 15000, device: cuda }
+optimizer: { lr: 0.002, weight_decay: 0.05, betas: [0.9, 0.999] }
+scheduler: { enabled: true, warmup_steps: 1000, warmup_start_lr: 1.0e-6, min_lr: 1.0e-5 }
+checkpoint:
+  out_dir: checkpoints
+  save_steps: [15000]
+  probe_steps: [0, 250, 500, 1000, 2000, 4000, 6000, 8000, 10000, 12500, 15000]
+wandb: { enabled: false, project: procedural-warmup-ca }
+logging: { print_freq: 50 }

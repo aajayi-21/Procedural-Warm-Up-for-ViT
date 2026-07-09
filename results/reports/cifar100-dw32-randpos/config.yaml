@@ -1,0 +1,41 @@
+seed: 42
+run_name: cifar100-dw32-randpos
+results_dir: results
+init_checkpoint: checkpoints/dw32-randpos-vit-t/ckpt_step_015000_stripped.pt
+model:
+  name: vit_tiny_patch16_224
+  drop_path_rate: 0.1
+data:
+  dataset: CIFAR100
+  data_root: data
+  input_size: 224
+  cpu_size: 32
+  num_workers: 0
+  train_fraction: 1.0
+aug:
+  color_jitter: 0.3
+  auto_augment: rand-m9-mstd0.5-inc1
+  reprob: 0.25
+  mixup: 0.8
+  cutmix: 1.0
+  smoothing: 0.1
+train:
+  epochs: 300
+  warmup_epochs: 50
+  batch_size: 512
+  lr: 0.002
+  weight_decay: 0.05
+  min_lr: 1.0e-05
+  warmup_lr: 1.0e-06
+  clip_grad: 1.0
+  use_amp: true
+  device: cuda
+  eval_interval: 1
+logging:
+  print_freq: 50
+  progress: true
+  figure_every: 1000
+wandb:
+  enabled: false
+  project: procedural-warmup-ca
+  entity: null

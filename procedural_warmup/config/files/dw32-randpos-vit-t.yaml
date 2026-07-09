@@ -1,0 +1,35 @@
+# Tier-1 / H7 arm B: DW_32 with RANDOM frozen positions — the decisive test after the
+# H6 screen verdict (results/reports/dw32-screen/report.md). The screen showed the 2D
+# structure transfers (+3.04 over its control) but every sincos2d arm sits below random
+# init; this arm removes the structured position code while keeping data + masking
+# identical to dw32-vit-t. Random frozen positions are the canonical k-Dyck recipe and
+# match the downstream init condition (the vision model's pos_embed starts random).
+#
+# Pre-registered reads (1 seed, P7 noise band 0.7):
+#   >= ~70.7  -> presentation was the killer; DW viable; stack harder masking next.
+#   ~= 68     -> presentation exonerated; masking/task-difficulty becomes primary.
+seed: 42
+run_name: dw32-randpos-vit-t
+results_dir: results
+
+model: { name: vit_tiny_patch16_224, embed_dim: 192, pos_embed: random }
+grid: { H: 14, W: 14 }
+vocab: { K: 130, PAD_ID: 0, MASK_ID: 1 }   # 2 specials + 4k corner symbols (k=32)
+
+data:
+  source: dyck2d
+
+dyck2d: { k: 32, p_acc: 0.6, open_prob: 0.6, min_match_distance: 2 }
+
+masking: { mode: corner_close_only, mask_ratio: 0.5 }
+
+dataset: { n_samples: 100000, batch_size: 256, num_workers: 16, pin_memory: true }
+training: { steps: 15000, device: cuda }
+optimizer: { lr: 0.002, weight_decay: 0.05, betas: [0.9, 0.999] }
+scheduler: { enabled: true, warmup_steps: 1000, warmup_start_lr: 1.0e-6, min_lr: 1.0e-5 }
+checkpoint:
+  out_dir: checkpoints
+  save_steps: [15000]
+  probe_steps: [0, 250, 500, 1000, 2000, 4000, 6000, 8000, 10000, 12500, 15000]
+wandb: { enabled: false, project: procedural-warmup-ca }
+logging: { print_freq: 50 }

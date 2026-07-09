@@ -1,0 +1,35 @@
+{
+  "comparison": [
+    {
+      "label": "Random",
+      "run": "cifar100-random-repro",
+      "best_top1": 70.33999633789062,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "k-Dyck 1D",
+      "run": "cifar100-dyck-repro",
+      "best_top1": 72.08000183105469,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "DW32 2D",
+      "run": "cifar100-dw32",
+      "best_top1": 67.87999725341797,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "DW32 shuffle",
+      "run": "cifar100-dw32-shuffle",
+      "best_top1": 64.83999633789062,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "DW32 2D tuned",
+      "run": "cifar100-dw32-tuned",
+      "best_top1": 68.5999984741211,
+      "dataset": "CIFAR100"
+    }
+  ],
+  "winner": "k-Dyck 1D"
+}

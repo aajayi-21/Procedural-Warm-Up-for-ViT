@@ -1,0 +1,41 @@
+{
+  "comparison": [
+    {
+      "label": "Random",
+      "run": "cifar100-random-repro",
+      "best_top1": 70.33999633789062,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "k-Dyck 1D (randpos)",
+      "run": "cifar100-dyck-repro",
+      "best_top1": 72.08000183105469,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "DW32 randpos",
+      "run": "cifar100-dw32-randpos",
+      "best_top1": 69.06999969482422,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "DW32 randpos shuffle",
+      "run": "cifar100-dw32-randpos-shuffle",
+      "best_top1": 67.47000122070312,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "DW32 sincos2d",
+      "run": "cifar100-dw32",
+      "best_top1": 67.87999725341797,
+      "dataset": "CIFAR100"
+    },
+    {
+      "label": "DW32 sincos2d shuffle",
+      "run": "cifar100-dw32-shuffle",
+      "best_top1": 64.83999633789062,
+      "dataset": "CIFAR100"
+    }
+  ],
+  "winner": "k-Dyck 1D (randpos)"
+}

@@ -1,0 +1,31 @@
+# Step-1 arm C (post-Tier-1): the combined hardest determinate objective — strict
+# min-span filter AND both closing roles masked, mask_ratio 1.0. Every eligible corner
+# is masked, every target requires a non-adjacent binding, and c-targets are
+# column-only recoverable. ~34 hard targets/sample. This is the maximum sustained
+# pressure reachable at 14x14 without the (pre-generation-dependent) H11
+# audited-random mode.
+seed: 42
+run_name: dw32-randpos-hard-vit-t
+results_dir: results
+
+model: { name: vit_tiny_patch16_224, embed_dim: 192, pos_embed: random }
+grid: { H: 14, W: 14 }
+vocab: { K: 130, PAD_ID: 0, MASK_ID: 1 }
+
+data:
+  source: dyck2d
+
+dyck2d: { k: 32, p_acc: 0.6, open_prob: 0.6, min_match_distance: 2, filter_mode: min, mask_roles: cd }
+
+masking: { mode: closing_corners, mask_ratio: 1.0 }
+
+dataset: { n_samples: 100000, batch_size: 256, num_workers: 16, pin_memory: true }
+training: { steps: 15000, device: cuda }
+optimizer: { lr: 0.002, weight_decay: 0.05, betas: [0.9, 0.999] }
+scheduler: { enabled: true, warmup_steps: 1000, warmup_start_lr: 1.0e-6, min_lr: 1.0e-5 }
+checkpoint:
+  out_dir: checkpoints
+  save_steps: [15000]
+  probe_steps: [0, 250, 500, 1000, 2000, 4000, 6000, 8000, 10000, 12500, 15000]
+wandb: { enabled: false, project: procedural-warmup-ca }
+logging: { print_freq: 50 }

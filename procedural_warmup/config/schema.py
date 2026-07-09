@@ -75,15 +75,27 @@ class Dyck2DConfig:
     ``k`` quadruple types give 4k corner symbols (ids [2, 2+4k)); vocab.K must be
     >= 4k + 2 (k = 32 -> K = 130, the 1D k-Dyck vocabulary). ``p_acc`` is the
     accretion-vs-guillotine-split probability (nesting-depth knob, the 2D analog of
-    ``open_prob``); ``open_prob`` shapes the border Dyck words. A d-corner is maskable
-    iff ``max(row_span, col_span) >= min_match_distance`` (spans are odd, so the
-    default 2 excludes exactly the fully-local 2x2 rectangles; <= 1 disables).
+    ``open_prob``); ``open_prob`` shapes the border Dyck words.
+
+    Maskability: a rectangle's closing corners are eligible iff
+    ``agg(row_span, col_span) >= min_match_distance`` where ``agg`` is
+    ``filter_mode``: ``"max"`` (default; excludes only fully-local 2x2 rectangles) or
+    ``"min"`` (strict: both partners of every masked corner are non-adjacent — kills
+    the ~50% adjacent-partner shortcut measured by ``data.dyck2d.stats``). Spans are
+    odd; ``min_match_distance <= 1`` disables the filter.
+
+    ``mask_roles``: which closing corners the masking may hide — ``"d"`` (default:
+    corner-close-only, the H6 objective) or ``"cd"`` (both closing roles; a masked c
+    has no row witness, so single-axis parsing stops sufficing — each masked cell is
+    still uniquely forced by its COLUMN, verified by the ``closing`` audit mode).
     """
 
     k: int = 32
     p_acc: float = 0.6
     open_prob: float = 0.6
     min_match_distance: int = 2
+    filter_mode: str = "max"  # "max" | "min"
+    mask_roles: str = "d"  # "d" | "cd"
 
 
 @dataclass

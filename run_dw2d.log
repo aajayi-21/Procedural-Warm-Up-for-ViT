@@ -1,0 +1,12 @@
+== warm-up dyck-repro: stripped checkpoint exists, skipping ==
+== downstream cifar100-dyck-repro: metrics exist, skipping ==
+== downstream cifar100-random-repro: metrics exist, skipping ==
+== warm-up dw32-vit-t ==
+Traceback (most recent call last):
+  File "<frozen runpy>", line 194, in _run_module_as_main
+  File "<frozen runpy>", line 114, in _get_module_details
+  File "C:\Users\adeol\Projects\Procedural-Warm-Up-for-ViT\procedural_warmup\warmup\__init__.py", line 3, in <module>
+    from procedural_warmup.warmup.process import clean_checkpoint
+  File "C:\Users\adeol\Projects\Procedural-Warm-Up-for-ViT\procedural_warmup\warmup\process.py", line 19, in <module>
+    import torch
+ModuleNotFoundError: No module named 'torch'

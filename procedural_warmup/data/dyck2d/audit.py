@@ -5,7 +5,13 @@ the visible context (the CA study's ``iid-static`` regime, 65.72 on CIFAR-100, i
 under-determination produces). This module decides, per masked cell, whether its value
 is forced — and cross-checks itself by brute force on small grids.
 
-Two modes:
+Three modes:
+
+- ``mode="closing"`` — exact under the ``mask_roles="cd"`` policy (masked cells are
+  closing corners, c or d). Both roles are closers of the COLUMN pair system, and the
+  column openers (a, b) are never masked, so a top-down column parse forces every
+  hole's role and index from the stack top alone; the completion is re-checked with
+  Tier 1. Also exact for d-only masks (a sub-policy).
 
 - ``mode="corner"`` — exact under the corner-close-only policy (only d-cells masked).
   All a/b/c symbols are visible, and projections of a Dyck line onto a subset of its
@@ -39,7 +45,7 @@ from itertools import product
 
 import numpy as np
 
-from procedural_warmup.data.dyck2d.alphabet import Role, corner_id, d_base
+from procedural_warmup.data.dyck2d.alphabet import Role, corner_id, d_base, index_of, role_of
 from procedural_warmup.data.dyck2d.validate import MembershipError, check_picture
 
 # Line pair systems: (opener_role, closer_role) pairs active in rows vs columns.
@@ -289,13 +295,90 @@ def _audit_general(grid: np.ndarray, mask: np.ndarray, k: int) -> AuditReport:
     return AuditReport(ok, forced, values, rate, reasons)
 
 
+def _audit_closing(grid: np.ndarray, mask: np.ndarray, k: int) -> AuditReport:
+    """Exact audit for the ``mask_roles="cd"`` policy (masked cells are c's or d's).
+
+    Both c and d are CLOSERS in the column pair system ([a,c] and [b,d]): parse each
+    column top-down over visible openers (a, b) and closers, treating each hole as a
+    closer of the current stack top — (A, i) on top forces c_i, (B, i) forces d_i.
+    Every hole is therefore determined by its column alone (a/b are never masked under
+    the policy, so the opener context is always complete); row parses of the completed
+    picture are re-checked end-to-end with Tier 1. Also exact for d-only masks (a
+    sub-policy). A hole whose stack top is missing or that leaves openers unclosed is
+    a policy violation -> unforced, ok=False.
+    """
+    m, n = grid.shape
+    forced = np.zeros((m, n), dtype=bool)
+    values = np.zeros((m, n), dtype=np.int64)
+    reasons: list[str] = []
+    n_masked = int(mask.sum())
+    if n_masked == 0:
+        return AuditReport(True, forced, values, 1.0, reasons)
+
+    lo, hi = 2, 2 + 4 * k
+    visible = ~mask
+    bad = visible & ((grid < lo) | (grid >= hi))
+    if bad.any():
+        r, c = map(int, np.argwhere(bad)[0])
+        reasons.append(f"visible cell ({r},{c}) holds non-content id {int(grid[r, c])}")
+        return AuditReport(False, forced, values, 0.0, reasons)
+
+    ok = True
+    for c in range(n):
+        stack: list[tuple[Role, int, int]] = []  # (role, index, row)
+        for r in range(m):
+            if mask[r, c]:
+                if not stack:
+                    reasons.append(f"hole ({r},{c}): column stack empty (policy violation)")
+                    ok = False
+                    continue
+                top_role, top_idx, _ = stack.pop()
+                closer = Role.C if top_role == Role.A else Role.D
+                forced[r, c] = True
+                values[r, c] = corner_id(closer, top_idx, k)
+                continue
+            role, idx = role_of(int(grid[r, c]), k), index_of(int(grid[r, c]), k)
+            if role in (Role.A, Role.B):
+                stack.append((role, idx, r))
+            else:
+                need = Role.A if role == Role.C else Role.B
+                if not stack or stack[-1][0] != need or stack[-1][1] != idx:
+                    reasons.append(f"col {c}: visible {role.name}_{idx} at row {r} "
+                                   f"does not close the stack top")
+                    ok = False
+                    if stack:
+                        stack.pop()
+                    continue
+                stack.pop()
+        if stack:
+            reasons.append(f"col {c}: {len(stack)} opener(s) never closed")
+            ok = False
+
+    if ok:
+        completed = grid.copy()
+        completed[forced] = values[forced]
+        try:
+            check_picture(completed, k)
+        except MembershipError as exc:
+            reasons.append(f"completed picture failed Tier 1: {exc}")
+            ok = False
+
+    rate = float(forced[mask].mean()) if n_masked else 1.0
+    if not ok:
+        forced[:] = False
+        rate = 0.0
+    return AuditReport(ok, forced, values, rate, reasons)
+
+
 def audit_mask(grid: np.ndarray, mask: np.ndarray, k: int, mode: str = "corner") -> AuditReport:
     """Audit one (picture, mask) pair; see the module docstring for mode semantics."""
     if mode == "corner":
         return _audit_corner(grid, mask, k)
+    if mode == "closing":
+        return _audit_closing(grid, mask, k)
     if mode == "general":
         return _audit_general(grid, mask, k)
-    raise ValueError(f"mode must be 'corner'|'general', got {mode!r}")
+    raise ValueError(f"mode must be 'corner'|'general'|'closing', got {mode!r}")
 
 
 # ------------------------------------------------------------------------------------
@@ -308,13 +391,16 @@ def brute_force_forced(
     mask: np.ndarray,
     k: int,
     restrict_to_d: bool = False,
+    restrict_roles: str | None = None,
     cap: int = 2 ** 22,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Enumerate completions; a hole is forced iff all Tier-1-valid completions agree.
 
-    ``restrict_to_d=True`` restricts hole values to the d-block — determinacy under the
-    corner-close-only policy (what corner mode must match exactly); ``False`` measures
-    unrestricted-completion uniqueness. Only for small grids/masks: the candidate count
+    ``restrict_roles`` limits hole values to a policy's pool: ``"d"`` (the
+    corner-close-only policy — what corner mode must match exactly), ``"cd"`` (the
+    closing-corners policy — what closing mode must match), or ``None`` for
+    unrestricted-completion uniqueness. ``restrict_to_d=True`` is the legacy spelling
+    of ``restrict_roles="d"``. Only for small grids/masks: the candidate count
     ``(pool)^holes`` must stay under ``cap``.
     """
     holes = [tuple(map(int, p)) for p in np.argwhere(mask)]
@@ -322,9 +408,16 @@ def brute_force_forced(
     values = np.zeros(grid.shape, dtype=np.int64)
     if not holes:
         return forced, values
-    pool = (
-        list(range(d_base(k), d_base(k) + k)) if restrict_to_d else list(range(2, 2 + 4 * k))
-    )
+    if restrict_to_d and restrict_roles is None:
+        restrict_roles = "d"
+    if restrict_roles == "d":
+        pool = list(range(d_base(k), d_base(k) + k))
+    elif restrict_roles == "cd":
+        pool = list(range(2 + 2 * k, 2 + 4 * k))  # c-block + d-block (contiguous)
+    elif restrict_roles is None:
+        pool = list(range(2, 2 + 4 * k))
+    else:
+        raise ValueError(f"restrict_roles must be 'd'|'cd'|None, got {restrict_roles!r}")
     if len(pool) ** len(holes) > cap:
         raise ValueError(
             f"{len(pool)}^{len(holes)} completions exceed cap={cap}; shrink the grid/mask"

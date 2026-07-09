@@ -74,11 +74,16 @@ def run_gate(
     open_prob: float,
     min_match_distance: int,
     mask_ratio: float,
+    filter_mode: str = "max",
+    mask_roles: str = "d",
     tier2: bool = True,
     audit_every: int = 100,
     seed: int = 0,
 ) -> dict:
     """Sample n pictures; validate, audit a subsample, time generation. Returns metrics."""
+    agg = max if filter_mode == "max" else min
+    audit_mode = "closing" if mask_roles == "cd" else "corner"
+    cells_per_rect = 2 if mask_roles == "cd" else 1
     rng = random.Random(seed)
     mask_rng = np.random.default_rng(seed)
     trace: dict = {}
@@ -106,18 +111,20 @@ def run_gate(
             depth_hist[v] = depth_hist.get(v, 0) + 1
         elig = 0
         for r in rects:
-            if max(r.row_span, r.col_span) >= min_match_distance:
-                elig += 1
-                elig_adjacent_partner += min(r.row_span, r.col_span) == 1
+            if agg(r.row_span, r.col_span) >= min_match_distance:
+                elig += cells_per_rect
+                elig_adjacent_partner += (min(r.row_span, r.col_span) == 1) * cells_per_rect
         elig_total += elig
         elig_counts.append(elig)
         zero_elig += elig == 0
         if i % audit_every == 0 and elig > 0:
             m = np.zeros((H, W), dtype=bool)
             for r in rects:
-                if max(r.row_span, r.col_span) >= min_match_distance:
+                if agg(r.row_span, r.col_span) >= min_match_distance:
                     m[r.d_pos] = mask_rng.random() < mask_ratio
-            report = audit_mask(grid, m, k, mode="corner")
+                    if mask_roles == "cd":
+                        m[r.r2, r.c1] = mask_rng.random() < mask_ratio
+            report = audit_mask(grid, m, k, mode=audit_mode)
             audits += 1
             audited_ok += report.ok and report.determinacy_rate == 1.0
     gen_seconds = time.perf_counter() - t0
@@ -136,6 +143,8 @@ def run_gate(
         "p_acc": p_acc,
         "open_prob": open_prob,
         "min_match_distance": min_match_distance,
+        "filter_mode": filter_mode,
+        "mask_roles": mask_roles,
         "membership_pass": True,  # gates raise on any failure
         "tier2_checked": tier2,
         "audits": audits,
@@ -222,6 +231,8 @@ def main() -> None:
         open_prob=cfg.dyck2d.open_prob,
         min_match_distance=cfg.dyck2d.min_match_distance,
         mask_ratio=cfg.masking.mask_ratio,
+        filter_mode=cfg.dyck2d.filter_mode,
+        mask_roles=cfg.dyck2d.mask_roles,
         tier2=not args.no_tier2,
         seed=args.seed,
     )

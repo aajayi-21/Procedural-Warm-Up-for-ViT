@@ -169,7 +169,10 @@ def attention_distance_profile(
         attn = (q * attn_mod.scale) @ k.transpose(-2, -1)  # (B, heads, T, T)
         attn = attn.softmax(dim=-1)
         attn = attn[:, :, 1:, 1:]  # drop CLS row/column...
-        attn = attn / attn.sum(dim=-1, keepdim=True)  # ...and renormalize each query row
+        # ...and renormalize each query row. clamp_min guards queries that park ~all
+        # mass on CLS (observed on the structure-free shuffle control — an attention
+        # sink; without the clamp those rows renormalize 0/0 to NaN).
+        attn = attn / attn.sum(dim=-1, keepdim=True).clamp_min(1e-6)
         # E[distance] per (batch, head, query), then mean over batch and queries.
         profile[b] = (attn * D).sum(dim=-1).mean(dim=(0, 2)).cpu().numpy()
     return profile

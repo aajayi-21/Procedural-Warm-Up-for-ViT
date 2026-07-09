@@ -1,0 +1,13 @@
+{
+  "run_name": "dw32-randpos-shuffle-vit-t",
+  "source": "dyck2d_shuffle",
+  "rule": null,
+  "masking": {
+    "mode": "corner_close_only",
+    "ratio": 0.5
+  },
+  "steps": 15000,
+  "final_avg_loss": 2.7676047360897065,
+  "final_avg_acc": 0.12404487081617117,
+  "checkpoint": "checkpoints\\dw32-randpos-shuffle-vit-t\\ckpt_step_015000.pt"
+}

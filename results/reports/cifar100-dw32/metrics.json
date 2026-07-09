@@ -1,0 +1,23 @@
+{
+  "run_name": "cifar100-dw32",
+  "dataset": "CIFAR100",
+  "init_checkpoint": "checkpoints/dw32-vit-t/ckpt_step_015000_stripped.pt",
+  "train_fraction": 1.0,
+  "epochs": 300,
+  "best_top1": 67.87999725341797,
+  "final_top1": 67.77999877929688,
+  "final_top5": 90.40999603271484,
+  "init_summary": {
+    "loaded": 146,
+    "missing": [
+      "cls_token",
+      "pos_embed",
+      "patch_embed.proj.weight",
+      "patch_embed.proj.bias",
+      "head.weight",
+      "head.bias"
+    ],
+    "unexpected": []
+  },
+  "finished": "2026-07-06T16:18:43Z"
+}

@@ -1,0 +1,13 @@
+{
+  "run_name": "dw32-vit-t",
+  "source": "dyck2d",
+  "rule": null,
+  "masking": {
+    "mode": "corner_close_only",
+    "ratio": 0.5
+  },
+  "steps": 15000,
+  "final_avg_loss": 0.23756167967296885,
+  "final_avg_acc": 0.9340680012592114,
+  "checkpoint": "checkpoints\\dw32-vit-t\\ckpt_step_015000.pt"
+}

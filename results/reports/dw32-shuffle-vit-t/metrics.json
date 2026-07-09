@@ -1,0 +1,13 @@
+{
+  "run_name": "dw32-shuffle-vit-t",
+  "source": "dyck2d_shuffle",
+  "rule": null,
+  "masking": {
+    "mode": "corner_close_only",
+    "ratio": 0.5
+  },
+  "steps": 15000,
+  "final_avg_loss": 2.685987442175547,
+  "final_avg_acc": 0.13134116770481147,
+  "checkpoint": "checkpoints\\dw32-shuffle-vit-t\\ckpt_step_015000.pt"
+}

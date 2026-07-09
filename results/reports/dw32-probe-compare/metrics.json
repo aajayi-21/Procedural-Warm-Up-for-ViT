@@ -1,0 +1,8 @@
+{
+  "runs": [
+    "dyck-repro",
+    "dw32-vit-t",
+    "dw32-shuffle-vit-t",
+    "dw32-tuned-vit-t"
+  ]
+}
